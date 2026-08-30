@@ -189,6 +189,10 @@ def get_connection():
         dbname=os.environ.get("DB_NAME", "water_data"),
         user=os.environ.get("DB_USER", "postgres"),
         password=os.environ.get("DB_PASSWORD", ""),
+        # "prefer" works for both a local Postgres with no SSL and a hosted
+        # provider (e.g. Neon) that requires it - it upgrades to SSL when
+        # the server offers it, without needing separate config per environment.
+        sslmode=os.environ.get("DB_SSLMODE", "prefer"),
     )
 
 
