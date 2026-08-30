@@ -2,9 +2,9 @@
 
 **Live:** [hydropower-market-dashboard.onrender.com](https://hydropower-market-dashboard.onrender.com)
 
-A live dashboard that overlays **river streamflow**, **wholesale electricity prices**, and **short-range flow forecasts** on one screen — so a hydropower operator or energy trader can see, at a glance, when water and price line up to make generation most valuable.
+A live dashboard that overlays **river streamflow**, **wholesale electricity prices**, and **short-range flow forecasts** on one screen, so a hydropower operator or energy trader can see, at a glance, when water and price line up to make generation most valuable.
 
-Built on three free, public, government data sources. No paid market-data subscriptions required — and the app itself runs on a $0 hosting stack (see [Deployment](#deployment)).
+Built on three free, public, government data sources. No paid market-data subscriptions required, and the app itself runs on a $0 hosting stack (see [Deployment](#deployment)).
 
 ![Dashboard demo showing NYISO electricity price, USGS streamflow, and NOAA streamflow forecast panels side by side, with a strongest-generation-window insight banner](docs/demo.png)
 
@@ -20,20 +20,20 @@ This dashboard pulls both into one view, adds a forward-looking flow forecast, a
 ## Features
 
 - **Live data panels** for three independent sources, each pinnable, comparable, and searchable by ID:
-  - **USGS streamflow** — real-time river discharge (cfs) at any USGS gauge.
-  - **NYISO real-time LBMP** — live wholesale electricity price at any NY grid pricing node (PTID).
-  - **NOAA NWPS short-range forecast** — National Water Model forecasted flow for a river reach.
-- **Combined/overlay view** — merge any two panels onto one dual-axis timeline (e.g. price vs. streamflow) to visually spot correlation.
-- **Revenue-window insight** — automatically highlights the strongest window of the day by price × flow, a rough proxy for relative generation value.
-- **Saved sites** — bundle a gauge + PTID + reach under one name (e.g. "Niagara Falls Plant") and load all three panels together.
-- **Threshold alerts** — set "notify me when X is above/below Y" per site and data source.
+  - **USGS streamflow**: real-time river discharge (cfs) at any USGS gauge.
+  - **NYISO real-time LBMP**: live wholesale electricity price at any NY grid pricing node (PTID).
+  - **NOAA NWPS short-range forecast**: National Water Model forecasted flow for a river reach.
+- **Combined/overlay view**: merge any two panels onto one dual-axis timeline (e.g. price vs. streamflow) to visually spot correlation.
+- **Revenue-window insight**: automatically highlights the strongest window of the day by price × flow, a rough proxy for relative generation value.
+- **Saved sites**: bundle a gauge + PTID + reach under one name (e.g. "Niagara Falls Plant") and load all three panels together.
+- **Threshold alerts**: set "notify me when X is above/below Y" per site and data source.
   - A background poller re-checks every 5 minutes, even with no browser open.
   - Edge-triggered, so a stuck violation doesn't spam repeat notifications.
   - Optional email delivery via any SMTP provider (Gmail app password, SendGrid, Mailgun, etc.).
-- **In-app notification center** — bell icon with unread count and history.
-- **Chart tools** — zoomable range slider, auto-scale toggle, CSV/JSON/XML export per panel.
-- **Multi-user accounts** — signup/login with hashed passwords; each user has their own saved sites, alerts, and contact settings.
-- **Historical persistence** — every fetched reading is upserted into Postgres, so data accumulates over time instead of being lost between fetches.
+- **In-app notification center**: bell icon with unread count and history.
+- **Chart tools**: zoomable range slider, auto-scale toggle, CSV/JSON/XML export per panel.
+- **Multi-user accounts**: signup/login with hashed passwords; each user has their own saved sites, alerts, and contact settings.
+- **Historical persistence**: every fetched reading is upserted into Postgres, so data accumulates over time instead of being lost between fetches.
 
 ## Tech stack
 
@@ -42,7 +42,7 @@ This dashboard pulls both into one view, adds a forward-looking flow forecast, a
 - **Frontend:** Vanilla JavaScript, [Chart.js](https://www.chartjs.org/)
 - **Auth:** Flask sessions, `werkzeug` password hashing (PBKDF2-SHA256)
 - **CSRF protection:** Flask-WTF, covering both native forms and the JSON API (via a `fetch()`-patching header injection in `script.js`)
-- **Production server:** gunicorn (single worker — see [Deployment](#deployment) for why)
+- **Production server:** gunicorn (single worker; see [Deployment](#deployment) for why)
 - **Hosting:** [Render](https://render.com) (free web service tier)
 - **Email:** stdlib `smtplib` (generic SMTP, provider-agnostic)
 
@@ -79,7 +79,7 @@ All three are free and require no API key.
 ### Prerequisites
 
 - Python 3.11 (matches what's pinned for production; 3.9+ also works locally)
-- A Postgres database — either running locally, or a free instance from [Neon](https://neon.tech) (no card required)
+- A Postgres database: either running locally, or a free instance from [Neon](https://neon.tech) (no card required)
 
 ### Install
 
@@ -105,12 +105,12 @@ DB_PASSWORD=your_password
 DB_SSLMODE=prefer
 SECRET_KEY=some_random_secret_key
 
-# Optional — set to "true" to enable Flask's debug mode (auto-reload,
+# Optional: set to "true" to enable Flask's debug mode (auto-reload,
 # interactive debugger). Leave unset/false anywhere reachable over the
-# network — the debugger allows arbitrary code execution.
+# network: the debugger allows arbitrary code execution.
 FLASK_DEBUG=false
 
-# Optional — leave blank to skip real email sends (logged instead)
+# Optional: leave blank to skip real email sends (logged instead)
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USERNAME=
@@ -118,7 +118,7 @@ SMTP_PASSWORD=
 SMTP_FROM_EMAIL=
 ```
 
-The app creates its own tables on startup (`users`, `saved_sites`, `alert_thresholds`, `alert_notifications`, and one table per data source) — no manual migrations needed.
+The app creates its own tables on startup (`users`, `saved_sites`, `alert_thresholds`, `alert_notifications`, and one table per data source). No manual migrations needed.
 
 ### Run
 
@@ -131,10 +131,10 @@ Visit `http://localhost:5050`.
 
 ## Deployment
 
-The live site runs on a **$0 hosting stack**: [Render](https://render.com) for the app, [Neon](https://neon.tech) for the database. Both have genuinely free tiers (no time-limited trial, no card required for signup) — chosen deliberately over the alternatives:
+The live site runs on a **$0 hosting stack**: [Render](https://render.com) for the app, [Neon](https://neon.tech) for the database. Both have genuinely free tiers (no time-limited trial, no card required for signup), chosen deliberately over the alternatives:
 
-- **Not SQLite** — Render's free web service has an *ephemeral filesystem*; a local SQLite file would be wiped on every restart, redeploy, or the automatic spin-down after 15 minutes of inactivity.
-- **Not Render's own Postgres add-on** — its free tier currently expires 30 days after creation. Neon's free tier has no such expiry.
+- **Not SQLite**: Render's free web service has an *ephemeral filesystem*; a local SQLite file would be wiped on every restart, redeploy, or the automatic spin-down after 15 minutes of inactivity.
+- **Not Render's own Postgres add-on**: its free tier currently expires 30 days after creation. Neon's free tier has no such expiry.
 
 ### Deploying this app yourself
 
@@ -152,14 +152,14 @@ The live site runs on a **$0 hosting stack**: [Render](https://render.com) for t
 3. **Set environment variables** on Render (same names as the local `.env` above): `SECRET_KEY`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, and `DB_SSLMODE=require` (Neon requires SSL; locally we default to `prefer` since local Postgres doesn't need it).
 4. Deploy. Render builds and gives you a public `*.onrender.com` URL.
 
-**Gotcha we hit going through this ourselves:** Render defaults to the newest available Python (3.14 at time of writing), which broke `psycopg2-binary`'s compiled extension (no compatible wheel yet: `undefined symbol: _PyInterpreterState_Get`). Fixed by pinning the version via `app/.python-version` (`3.11.9`) — worth setting from the start rather than hitting this on your first deploy.
+**Gotcha we hit going through this ourselves:** Render defaults to the newest available Python (3.14 at time of writing), which broke `psycopg2-binary`'s compiled extension (no compatible wheel yet: `undefined symbol: _PyInterpreterState_Get`). Fixed by pinning the version via `app/.python-version` (`3.11.9`), worth setting from the start rather than hitting this on your first deploy.
 
 **Why `--workers 1` is required, not optional:** the alert poller runs as a background thread inside the web process itself, started once at import time. More than one gunicorn worker means more than one poller, which means duplicate alert checks and duplicate emails.
 
 ### Known limitations of the free tier
 
 - Render's free web service sleeps after 15 minutes with no traffic, so the first request after a quiet period is slow (~1 minute cold start).
-- The alert poller only runs while the process is awake — it doesn't reliably fire on its own 5-minute schedule during quiet periods, only resuming when a visit wakes the app back up. An external scheduled pinger (hitting the site periodically) would fix this, but isn't set up yet.
+- The alert poller only runs while the process is awake: it doesn't reliably fire on its own 5-minute schedule during quiet periods, only resuming when a visit wakes the app back up. An external scheduled pinger (hitting the site periodically) would fix this, but isn't set up yet.
 
 ## Usage
 
@@ -172,20 +172,20 @@ The live site runs on a **$0 hosting stack**: [Render](https://render.com) for t
 ## Security notes
 
 - Passwords are hashed with PBKDF2-SHA256, never stored in plain text.
-- All SQL is parameterized — no string-built queries from user input.
+- All SQL is parameterized: no string-built queries from user input.
 - Every route that reads or writes user-specific data requires login.
 - CSRF protection (Flask-WTF) covers both native forms and the JSON API.
-- Flask's debug mode (which exposes an interactive, code-executing debugger on error pages) is off by default and must be explicitly opted into via `FLASK_DEBUG=true` — never set that where the app is reachable over the network.
+- Flask's debug mode (which exposes an interactive, code-executing debugger on error pages) is off by default and must be explicitly opted into via `FLASK_DEBUG=true`; never set that where the app is reachable over the network.
 
 ## Industry relevance
 
 This is a lightweight version of the kind of market-integration dashboards used at small-to-mid hydroelectric facilities, built entirely from free public data instead of paid feeds:
 
-- **Generation scheduling** — decide when to run turbines based on both water availability and market price in one view, instead of checking separate government portals.
-- **Revenue optimization** — the price × flow overlay approximates what an energy trading desk does manually to spot high-value generation windows.
-- **Forecast-informed planning** — the NOAA short-range forecast lets an operator anticipate flow changes before they happen.
-- **Proactive monitoring** — threshold alerts remove the need for constant manual checking, useful for smaller operators without a 24/7 control room.
+- **Generation scheduling**: decide when to run turbines based on both water availability and market price in one view, instead of checking separate government portals.
+- **Revenue optimization**: the price × flow overlay approximates what an energy trading desk does manually to spot high-value generation windows.
+- **Forecast-informed planning**: the NOAA short-range forecast lets an operator anticipate flow changes before they happen.
+- **Proactive monitoring**: threshold alerts remove the need for constant manual checking, useful for smaller operators without a 24/7 control room.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
