@@ -131,4 +131,4 @@ This is a lightweight version of the kind of market-integration dashboards used 
 
 ## License
 
-Not yet specified.
+MIT — see [LICENSE](LICENSE).
