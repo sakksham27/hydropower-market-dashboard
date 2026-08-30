@@ -95,6 +95,11 @@ DB_USER=postgres
 DB_PASSWORD=your_password
 SECRET_KEY=some_random_secret_key
 
+# Optional — set to "true" to enable Flask's debug mode (auto-reload,
+# interactive debugger). Leave unset/false anywhere reachable over the
+# network — the debugger allows arbitrary code execution.
+FLASK_DEBUG=false
+
 # Optional — leave blank to skip real email sends (logged instead)
 SMTP_HOST=
 SMTP_PORT=587
@@ -105,7 +110,7 @@ SMTP_FROM_EMAIL=
 
 The app creates its own tables on startup (`users`, `saved_sites`, `alert_thresholds`, `alert_notifications`, and one table per data source) — no manual migrations needed.
 
-### Run
+### Run (development)
 
 ```bash
 cd app
@@ -113,6 +118,17 @@ python app.py
 ```
 
 Visit `http://localhost:5050`.
+
+### Run (production)
+
+The dev server above (`python app.py`) is not meant to handle real traffic or run unattended. Use gunicorn instead, as a single worker process — the background alert poller runs as a thread inside the process, so more than one worker would start a duplicate poller and send duplicate alert emails:
+
+```bash
+cd app
+gunicorn app:app --bind 0.0.0.0:$PORT --workers 1
+```
+
+This is also captured in `app/Procfile` for platforms (Render, Heroku, etc.) that read it automatically.
 
 ## Usage
 

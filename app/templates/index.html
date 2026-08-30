@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>Hydropower Market Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -37,6 +38,7 @@
                     <button type="button" class="profile-menu-btn" id="manage-sites-open-btn">Manage Sites</button>
                     <button type="button" class="profile-menu-btn" id="manage-alerts-open-btn">Manage Alerts</button>
                     <form method="POST" action="{{ url_for('logout') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                         <button type="submit" class="profile-logout-btn">Log out</button>
                     </form>
                 </div>

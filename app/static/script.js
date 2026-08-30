@@ -1,3 +1,21 @@
+// CSRF protection (Flask-WTF): every state-changing fetch() call below needs
+// the per-session token attached as a header, since these are JSON API
+// calls rather than native form submissions. Patching fetch() once here
+// means the ~20 call sites throughout this file don't each need to
+// remember to add it themselves.
+(() => {
+    const token = document.querySelector('meta[name="csrf-token"]')?.content || "";
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = (input, init = {}) => {
+        const method = (init.method || "GET").toUpperCase();
+        if (method === "GET" || method === "HEAD") return nativeFetch(input, init);
+        return nativeFetch(input, {
+            ...init,
+            headers: { ...(init.headers || {}), "X-CSRFToken": token },
+        });
+    };
+})();
+
 const MIN_GAP_HOURS = 0.5;
 const REFRESH_INTERVAL_SECONDS = 300;
 // Deliberately excludes the widgets' primary line colors (#2f7a4f green for

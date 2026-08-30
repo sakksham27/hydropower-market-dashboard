@@ -13,16 +13,27 @@ from zoneinfo import ZoneInfo
 import psycopg2
 import requests
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+from flask_wtf import CSRFProtect
+from flask_wtf.csrf import CSRFError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import db
 
 app = Flask(__name__)
 app.secret_key = os.environ["SECRET_KEY"]
+# No expiry: this is a dashboard people leave open for hours, and a fresh
+# token isn't issued until the page is reloaded.
+app.config["WTF_CSRF_TIME_LIMIT"] = None
+csrf = CSRFProtect(app)
 db.ensure_users_table()
 db.ensure_saved_sites_table()
 db.ensure_alert_thresholds_table()
 db.ensure_alert_notifications_table()
+
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(exc):
+    return jsonify({"error": "Your session expired. Please refresh the page and try again."}), 400
 
 VALID_PANEL_TYPES = {"usgs", "nyiso", "reach"}
 VALID_DIRECTIONS = {"above", "below"}
@@ -467,6 +478,7 @@ def api_delete_alert():
 
 
 @app.route("/api/fetch", methods=["POST"])
+@login_required
 def api_fetch():
     body = request.get_json(silent=True) or {}
     site_no = (body.get("site_no") or "").strip()
@@ -503,6 +515,7 @@ def api_fetch():
 
 
 @app.route("/api/readings")
+@login_required
 def api_readings():
     site_no = (request.args.get("site_no") or "").strip()
 
@@ -529,6 +542,7 @@ def api_readings():
 
 
 @app.route("/api/nyiso/fetch", methods=["POST"])
+@login_required
 def api_nyiso_fetch():
     body = request.get_json(silent=True) or {}
     ptid = (body.get("ptid") or "").strip()
@@ -566,6 +580,7 @@ def api_nyiso_fetch():
 
 
 @app.route("/api/nyiso/readings")
+@login_required
 def api_nyiso_readings():
     ptid = _normalize_ptid(request.args.get("ptid") or "")
 
@@ -592,6 +607,7 @@ def api_nyiso_readings():
 
 
 @app.route("/api/reach/fetch", methods=["POST"])
+@login_required
 def api_reach_fetch():
     body = request.get_json(silent=True) or {}
     reach_id = (body.get("reach_id") or "").strip()
@@ -633,6 +649,7 @@ def api_reach_fetch():
 
 
 @app.route("/api/reach/readings")
+@login_required
 def api_reach_readings():
     reach_id = (request.args.get("reach_id") or "").strip()
 
@@ -786,13 +803,26 @@ def _alert_poll_loop():
         time_module.sleep(ALERT_POLL_INTERVAL_SECONDS)
 
 
-# Flask's debug reloader re-executes this whole module in a parent "watcher"
-# process (which never serves requests) before spawning the real serving
-# process as a child with WERKZEUG_RUN_MAIN set. Gating on that env var
-# keeps this thread from starting twice.
-if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+def _should_start_alert_poller() -> bool:
+    """Exactly one process should run the poller.
+
+    Flask's debug reloader re-executes this whole module in a parent
+    "watcher" process (which never serves requests) before spawning the real
+    serving process as a child with WERKZEUG_RUN_MAIN set - so under the
+    reloader, only the child should start it. Outside the reloader (e.g.
+    gunicorn in production) that env var is never set at all, so there's no
+    parent/child split to worry about and it should just start. Production
+    deploys must still run a single worker process, since each worker would
+    otherwise start its own poller and send duplicate alert emails.
+    """
+    run_main = os.environ.get("WERKZEUG_RUN_MAIN")
+    return run_main == "true" if run_main is not None else True
+
+
+if _should_start_alert_poller():
     threading.Thread(target=_alert_poll_loop, daemon=True).start()
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5050)
+    debug_mode = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    app.run(debug=debug_mode, port=5050)

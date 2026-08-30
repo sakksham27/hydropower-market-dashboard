@@ -15,6 +15,7 @@
         </div>
 
         <form class="auth-form{{ '' if active_tab != 'signup' else ' hidden-form' }}" id="signin-form" method="POST" action="{{ url_for('login') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             {% if login_error %}<p class="auth-error">{{ login_error }}</p>{% endif %}
             <label>
                 Username
@@ -28,6 +29,7 @@
         </form>
 
         <form class="auth-form{{ '' if active_tab == 'signup' else ' hidden-form' }}" id="signup-form" method="POST" action="{{ url_for('signup') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             {% if signup_error %}<p class="auth-error">{{ signup_error }}</p>{% endif %}
             <label>
                 Username
