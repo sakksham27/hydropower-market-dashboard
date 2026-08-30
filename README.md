@@ -42,7 +42,7 @@ This dashboard pulls both into one view, adds a forward-looking flow forecast, a
 ## Project layout
 
 ```
-backend/
+app/
 ├── app.py              # Flask routes, external API fetch/clean logic, alert poller
 ├── db.py                # Postgres schema + queries
 ├── requirements.txt
@@ -75,7 +75,7 @@ All three are free and require no API key.
 ### Install
 
 ```bash
-cd backend
+cd app
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -83,7 +83,7 @@ pip install -r requirements.txt
 
 ### Configure environment
 
-Create `backend/.env`:
+Create `app/.env`:
 
 ```
 DB_HOST=localhost
@@ -106,7 +106,7 @@ The app creates its own tables on startup (`users`, `saved_sites`, `alert_thresh
 ### Run
 
 ```bash
-cd backend
+cd app
 python app.py
 ```
 
