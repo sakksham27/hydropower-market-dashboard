@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Plant Monitoring System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body class="auth-body">
+    <div class="auth-card">
+        <h1 class="auth-title">Plant Monitoring System</h1>
+
+        <div class="auth-tabs">
+            <button type="button" class="auth-tab{{ ' active' if active_tab != 'signup' else '' }}" data-tab="signin">Sign In</button>
+            <button type="button" class="auth-tab{{ ' active' if active_tab == 'signup' else '' }}" data-tab="signup">Sign Up</button>
+        </div>
+
+        <form class="auth-form{{ '' if active_tab != 'signup' else ' hidden-form' }}" id="signin-form" method="POST" action="{{ url_for('login') }}">
+            {% if login_error %}<p class="auth-error">{{ login_error }}</p>{% endif %}
+            <label>
+                Username
+                <input type="text" name="username" autocomplete="username" required />
+            </label>
+            <label>
+                Password
+                <input type="password" name="password" autocomplete="current-password" required />
+            </label>
+            <button type="submit">Sign In</button>
+        </form>
+
+        <form class="auth-form{{ '' if active_tab == 'signup' else ' hidden-form' }}" id="signup-form" method="POST" action="{{ url_for('signup') }}">
+            {% if signup_error %}<p class="auth-error">{{ signup_error }}</p>{% endif %}
+            <label>
+                Username
+                <input type="text" name="username" autocomplete="username" required />
+            </label>
+            <label>
+                Password
+                <input type="password" name="password" autocomplete="new-password" minlength="6" required />
+            </label>
+            <label>
+                Confirm password
+                <input type="password" name="confirm_password" autocomplete="new-password" minlength="6" required />
+            </label>
+            <button type="submit">Sign Up</button>
+        </form>
+    </div>
+    <script src="{{ url_for('static', filename='start.js') }}"></script>
+</body>
+</html>

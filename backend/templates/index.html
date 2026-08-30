@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Plant Monitoring System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <div class="page-header">
+        <h1 class="page-title">Plant Monitoring System</h1>
+        <div class="page-header-actions">
+            <button type="button" id="global-refresh-btn" class="global-refresh-btn" aria-label="Refresh all panels now">
+                <span class="global-refresh-icon" aria-hidden="true">&#8635;</span>
+                <span id="global-refresh-label">Updated just now</span>
+            </button>
+            <div class="notification-menu">
+                <button type="button" class="notification-bell-btn" id="notification-bell-btn" aria-label="Alert notifications">
+                    <span aria-hidden="true">&#128276;</span>
+                    <span class="notification-badge" id="notification-badge" hidden>0</span>
+                </button>
+                <div class="notification-dropdown" id="notification-dropdown" hidden>
+                    <div class="notification-dropdown-header">
+                        <span>Notifications</span>
+                        <button type="button" class="notification-mark-read-btn" id="notification-mark-read-btn">Mark all read</button>
+                    </div>
+                    <div class="notification-list" id="notification-list"></div>
+                </div>
+            </div>
+            <div class="profile-menu">
+                <button type="button" class="profile-icon" id="profile-icon-btn" aria-label="Profile menu">{{ (username or "?")[0]|upper }}</button>
+                <div class="profile-dropdown" id="profile-dropdown" hidden>
+                    <p class="profile-username">{{ username }}</p>
+                    <button type="button" class="profile-menu-btn" id="manage-sites-open-btn">Manage Sites</button>
+                    <button type="button" class="profile-menu-btn" id="manage-alerts-open-btn">Manage Alerts</button>
+                    <form method="POST" action="{{ url_for('logout') }}">
+                        <button type="submit" class="profile-logout-btn">Log out</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="dashboard-hint" id="dashboard-hint">
+        New here? Enter an ID in any panel below and press Submit &mdash; or save a combination of IDs under one
+        name from your profile menu, so you can load every panel at once from the dropdown below.
+        <button type="button" class="dashboard-hint-dismiss" id="dashboard-hint-dismiss" aria-label="Dismiss tip">&times;</button>
+    </p>
+
+    <div class="insight-banner" id="insight-banner" hidden>
+        <div class="insight-banner-main" id="insight-banner-main">
+            <span class="insight-banner-icon" aria-hidden="true">&#9889;</span>
+            <span class="insight-banner-text" id="insight-banner-text"></span>
+        </div>
+        <button type="button" class="insight-banner-cta" id="insight-banner-cta-btn">
+            <span aria-hidden="true">&#9974;</span> View expanded chart <span aria-hidden="true">&rarr;</span>
+        </button>
+        <span class="info-tooltip">
+            <button type="button" class="info-icon" aria-describedby="insight-info-tooltip">?</button>
+            <span class="info-tooltip-content" id="insight-info-tooltip" role="tooltip">
+                &ldquo;Strongest&rdquo; = the run of hours with the highest average (price &times; flow) &mdash;
+                a rough proxy for relative generation revenue, not a prediction. Compares today's realized
+                NYISO price against today's actual USGS streamflow, hour by hour, against today's own average.
+            </span>
+        </span>
+    </div>
+
+    <div class="control-bar">
+        <div class="control-bar-item">
+            <span class="control-bar-icon" aria-hidden="true" title="Saved Sites">&#128205;</span>
+            <label class="control-bar-label" for="saved-sites-select">Saved site:</label>
+            <select id="saved-sites-select" class="saved-sites-select">
+                <option value="">Select a saved site&hellip;</option>
+            </select>
+            <button type="button" id="manage-sites-link-btn" class="manage-sites-link-btn">Manage</button>
+        </div>
+
+        <div class="control-bar-divider" aria-hidden="true"></div>
+
+        <div class="control-bar-item">
+            <span class="control-bar-icon" aria-hidden="true" title="Merge graphs">&#8646;</span>
+            <label class="control-bar-label" for="merge-select">Merge graphs:</label>
+            <select id="merge-select" class="merge-select" disabled>
+                <option value="">Show all three separately</option>
+                <option value="nyiso-usgs">NYISO Price + USGS Streamflow</option>
+                <option value="nyiso-reach">NYISO Price + NOAA Forecast</option>
+                <option value="usgs-reach">USGS Streamflow + NOAA Forecast</option>
+            </select>
+            <span class="merge-toolbar-hint" id="merge-toolbar-hint">Load 2+ panels to combine.</span>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <section class="card combined-card" id="combined-widget" hidden>
+            <div class="card-title-row">
+                <h2 class="card-title">Combined View</h2>
+                <span class="panel-badge panel-badge-forecast" title="Two data sources overlaid on one shared timeline">COMBINED</span>
+            </div>
+            <p class="card-subtitle" id="combined-subtitle">Two data sources overlaid on one timeline, two axes.</p>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title-block">
+                        <p class="chart-title-id" id="combined-title-id"></p>
+                        <p class="chart-title-range" id="combined-title-range"></p>
+                    </div>
+                </div>
+
+                <div class="chart-canvas-wrap combined-canvas-wrap">
+                    <canvas id="combined-chart-canvas"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" id="nyiso-widget">
+            <div class="card-title-row">
+                <h2 class="card-title">Electricity Price &mdash; NYISO Real-Time LBMP</h2>
+                <span class="panel-badge panel-badge-live" title="Live real-time price — source typically updates every 5 min">LIVE</span>
+            </div>
+            <p class="card-subtitle">Live wholesale electricity price for one grid pricing node (PTID).</p>
+
+            <div class="pinned-container">
+                <span class="pinned-label">Pinned PTIDs:</span>
+                <span class="info-tooltip">
+                    <button type="button" class="info-icon" aria-describedby="nyiso-info-tooltip">?</button>
+                    <span class="info-tooltip-content" id="nyiso-info-tooltip" role="tooltip">
+                        PTID (Pricing Node ID) &mdash; identifies a specific point on the NY power grid where electricity price is measured.
+                        <a href="https://www.nyiso.com" target="_blank" rel="noopener">nyiso.com</a>
+                    </span>
+                </span>
+                <div class="pinned-chips"></div>
+            </div>
+
+            <form class="entry-form">
+                <div class="entry-input-wrap">
+                    <input id="nyiso-input" class="entry-input" type="text" placeholder="PTID, e.g. 24138" aria-label="PTID" autocomplete="off" required />
+                    <span class="entry-input-hint" aria-hidden="true"><span class="entry-input-hint-text"></span></span>
+                </div>
+                <button type="button" class="pin-icon-btn" title="Pin this PTID for quick access" aria-label="Pin this PTID">&#128204;</button>
+                <button type="submit">Submit</button>
+                <button type="button" class="add-site-btn" title="Compare another PTID on this chart">+ Compare</button>
+            </form>
+            <p class="status"></p>
+
+            <div class="chart-container" hidden>
+                <div class="chart-header">
+                    <div class="chart-title-block">
+                        <p class="chart-title-id"></p>
+                        <p class="chart-title-range"></p>
+                    </div>
+                    <div class="chart-header-actions">
+                        <button type="button" class="scale-toggle-btn" aria-pressed="false" title="Auto-scale zooms the axis to the visible data range. Full range starts from zero so fluctuations aren't exaggerated.">Auto-scale</button>
+                        <button type="button" class="expand-btn" title="Expand chart" aria-label="Expand chart">&#9974; Expand</button>
+                    </div>
+                </div>
+
+                <p class="alert-banner" hidden></p>
+                <div class="extra-series-chips"></div>
+
+                <div class="chart-skeleton" aria-hidden="true" hidden>
+                    <div class="skeleton skeleton-legend"></div>
+                    <div class="skeleton skeleton-canvas"></div>
+                </div>
+                <p class="loading-message" hidden></p>
+
+                <div class="chart-canvas-wrap">
+                    <canvas class="readings-chart"></canvas>
+                </div>
+
+                <div class="range-slider-container">
+                    <div class="range-slider">
+                        <input type="range" class="range-start" min="0" max="24" step="0.5" value="0" />
+                        <input type="range" class="range-end" min="0" max="24" step="0.5" value="24" />
+                    </div>
+                    <div class="range-labels">
+                        <span class="range-start-label"></span>
+                        <span>&mdash;</span>
+                        <span class="range-end-label"></span>
+                    </div>
+                </div>
+
+                <div class="download-container">
+                    <select class="download-format">
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                        <option value="xml">XML</option>
+                    </select>
+                    <button type="button" class="download-btn">Download data</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" id="usgs-widget">
+            <div class="card-title-row">
+                <h2 class="card-title">Streamflow &mdash; USGS</h2>
+                <span class="panel-badge panel-badge-live" title="Live gauge readings — source typically updates every 15 min">LIVE</span>
+            </div>
+            <p class="card-subtitle">Live flow for one river gauge. Find a gauge number at waterdata.usgs.gov.</p>
+
+            <div class="pinned-container">
+                <span class="pinned-label">Pinned gauges:</span>
+                <span class="info-tooltip">
+                    <button type="button" class="info-icon" aria-describedby="usgs-info-tooltip">?</button>
+                    <span class="info-tooltip-content" id="usgs-info-tooltip" role="tooltip">
+                        A USGS streamgage number &mdash; a unique ID for a monitoring station on a river or stream.
+                        <a href="https://waterdata.usgs.gov" target="_blank" rel="noopener">waterdata.usgs.gov</a>
+                    </span>
+                </span>
+                <div class="pinned-chips"></div>
+            </div>
+
+            <form class="entry-form">
+                <div class="entry-input-wrap">
+                    <input id="usgs-input" class="entry-input" type="text" placeholder="Gauge number, e.g. 01646500" aria-label="Gauge number" autocomplete="off" required />
+                    <span class="entry-input-hint" aria-hidden="true"><span class="entry-input-hint-text"></span></span>
+                </div>
+                <button type="button" class="pin-icon-btn" title="Pin this gauge for quick access" aria-label="Pin this gauge">&#128204;</button>
+                <button type="submit">Submit</button>
+                <button type="button" class="add-site-btn" title="Compare another gauge on this chart">+ Compare</button>
+            </form>
+            <p class="status"></p>
+
+            <div class="chart-container" hidden>
+                <div class="chart-header">
+                    <div class="chart-title-block">
+                        <p class="chart-title-id"></p>
+                        <p class="chart-title-range"></p>
+                    </div>
+                    <div class="chart-header-actions">
+                        <button type="button" class="scale-toggle-btn" aria-pressed="false" title="Auto-scale zooms the axis to the visible data range. Full range starts from zero so fluctuations aren't exaggerated.">Auto-scale</button>
+                        <button type="button" class="expand-btn" title="Expand chart" aria-label="Expand chart">&#9974; Expand</button>
+                    </div>
+                </div>
+
+                <p class="alert-banner" hidden></p>
+                <div class="extra-series-chips"></div>
+
+                <div class="chart-skeleton" aria-hidden="true" hidden>
+                    <div class="skeleton skeleton-legend"></div>
+                    <div class="skeleton skeleton-canvas"></div>
+                </div>
+                <p class="loading-message" hidden></p>
+
+                <div class="chart-canvas-wrap">
+                    <canvas class="readings-chart"></canvas>
+                </div>
+
+                <div class="range-slider-container">
+                    <div class="range-slider">
+                        <input type="range" class="range-start" min="0" max="24" step="0.5" value="0" />
+                        <input type="range" class="range-end" min="0" max="24" step="0.5" value="24" />
+                    </div>
+                    <div class="range-labels">
+                        <span class="range-start-label"></span>
+                        <span>&mdash;</span>
+                        <span class="range-end-label"></span>
+                    </div>
+                </div>
+
+                <div class="download-container">
+                    <select class="download-format">
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                        <option value="xml">XML</option>
+                    </select>
+                    <button type="button" class="download-btn">Download data</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" id="reach-widget">
+            <div class="card-title-row">
+                <h2 class="card-title">Streamflow Forecast &mdash; NOAA NWPS</h2>
+                <span class="panel-badge panel-badge-forecast" title="Short-range forecast — source typically issued hourly">FORECAST</span>
+            </div>
+            <p class="card-subtitle">Short-range flow forecast for one river reach.</p>
+
+            <div class="pinned-container">
+                <span class="pinned-label">Pinned reach IDs:</span>
+                <span class="info-tooltip">
+                    <button type="button" class="info-icon" aria-describedby="reach-info-tooltip">?</button>
+                    <span class="info-tooltip-content" id="reach-info-tooltip" role="tooltip">
+                        NOAA reach ID &mdash; identifies a specific river segment used in the National Water Model forecast.
+                        <a href="https://water.noaa.gov" target="_blank" rel="noopener">water.noaa.gov</a>
+                    </span>
+                </span>
+                <div class="pinned-chips"></div>
+            </div>
+
+            <form class="entry-form">
+                <div class="entry-input-wrap">
+                    <input id="reach-input" class="entry-input" type="text" placeholder="Reach ID, e.g. 22288025" aria-label="Reach ID" autocomplete="off" required />
+                    <span class="entry-input-hint" aria-hidden="true"><span class="entry-input-hint-text"></span></span>
+                </div>
+                <button type="button" class="pin-icon-btn" title="Pin this reach ID for quick access" aria-label="Pin this reach ID">&#128204;</button>
+                <button type="submit">Submit</button>
+                <button type="button" class="add-site-btn" title="Compare another reach ID on this chart">+ Compare</button>
+            </form>
+            <p class="status"></p>
+
+            <div class="chart-container" hidden>
+                <div class="chart-header">
+                    <div class="chart-title-block">
+                        <p class="chart-title-id"></p>
+                        <p class="chart-title-range"></p>
+                    </div>
+                    <div class="chart-header-actions">
+                        <button type="button" class="scale-toggle-btn" aria-pressed="false" title="Auto-scale zooms the axis to the visible data range. Full range starts from zero so fluctuations aren't exaggerated.">Auto-scale</button>
+                        <button type="button" class="expand-btn" title="Expand chart" aria-label="Expand chart">&#9974; Expand</button>
+                    </div>
+                </div>
+
+                <p class="alert-banner" hidden></p>
+                <div class="extra-series-chips"></div>
+
+                <div class="chart-skeleton" aria-hidden="true" hidden>
+                    <div class="skeleton skeleton-legend"></div>
+                    <div class="skeleton skeleton-canvas"></div>
+                </div>
+                <p class="loading-message" hidden></p>
+
+                <div class="chart-canvas-wrap">
+                    <canvas class="readings-chart"></canvas>
+                </div>
+
+                <div class="range-slider-container">
+                    <div class="range-slider">
+                        <input type="range" class="range-start" min="0" max="24" step="0.5" value="0" />
+                        <input type="range" class="range-end" min="0" max="24" step="0.5" value="24" />
+                    </div>
+                    <div class="range-labels">
+                        <span class="range-start-label"></span>
+                        <span>&mdash;</span>
+                        <span class="range-end-label"></span>
+                    </div>
+                </div>
+
+                <div class="download-container">
+                    <select class="download-format">
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                        <option value="xml">XML</option>
+                    </select>
+                    <button type="button" class="download-btn">Download data</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="chart-modal-backdrop" class="modal-backdrop" hidden>
+        <div class="modal-panel" id="chart-modal-panel">
+            <button type="button" class="modal-close-btn" id="chart-modal-close" aria-label="Close">&times;</button>
+        </div>
+    </div>
+
+    <div id="manage-sites-modal-backdrop" class="modal-backdrop" hidden>
+        <div class="modal-panel manage-sites-panel">
+            <button type="button" class="modal-close-btn" id="manage-sites-close-btn" aria-label="Close">&times;</button>
+            <h2 class="manage-sites-title">Manage Sites</h2>
+
+            <div id="manage-sites-list" class="manage-sites-list"></div>
+
+            <button type="button" id="manage-sites-add-btn" class="save-site-btn">+ Add New Site</button>
+
+            <form id="manage-site-form" class="save-site-form" hidden>
+                <input type="hidden" name="site_id" />
+                <input type="text" name="name" placeholder="Site name, e.g. Niagara Falls Plant" required />
+                <input type="text" name="gauge_id" placeholder="Gauge number (optional)" />
+                <input type="text" name="ptid" placeholder="PTID (optional)" />
+                <input type="text" name="reach_id" placeholder="Reach ID (optional)" />
+                <button type="submit" id="manage-site-form-submit">Save</button>
+                <button type="button" id="manage-site-form-cancel" class="cancel-btn">Cancel</button>
+            </form>
+
+            <p class="save-site-status" id="manage-sites-status"></p>
+        </div>
+    </div>
+
+    <div id="manage-alerts-modal-backdrop" class="modal-backdrop" hidden>
+        <div class="modal-panel manage-sites-panel">
+            <button type="button" class="modal-close-btn" id="manage-alerts-close-btn" aria-label="Close">&times;</button>
+            <h2 class="manage-sites-title">Manage Alerts</h2>
+
+            <label class="alerts-enable-toggle">
+                <input type="checkbox" id="alerts-enabled-checkbox" />
+                Enable alert notifications
+            </label>
+            <p class="alerts-enable-hint">
+                Off by default. Turn this on to see alert banners on your panels &mdash; and to have your saved
+                alerts checked in the background every few minutes, even while this page isn't open &mdash; when a
+                threshold is crossed. Your saved alerts below are kept either way.
+            </p>
+
+            <div class="contact-settings">
+                <div class="contact-settings-title">Email notifications</div>
+                <form id="contact-settings-form" class="contact-settings-form">
+                    <input type="email" id="contact-email-input" placeholder="you@example.com" autocomplete="email" />
+                    <label class="checkbox-inline">
+                        <input type="checkbox" id="email-alerts-enabled-checkbox" />
+                        Also email me when an alert triggers
+                    </label>
+                    <button type="submit" id="contact-settings-save-btn">Save</button>
+                </form>
+                <p class="save-site-status" id="contact-settings-status"></p>
+            </div>
+
+            <div id="manage-alerts-list" class="manage-sites-list"></div>
+
+            <button type="button" id="manage-alerts-add-btn" class="save-site-btn">+ Add New Alert</button>
+
+            <form id="manage-alert-form" class="save-site-form" hidden>
+                <input type="hidden" name="original_panel_type" />
+                <input type="hidden" name="original_external_id" />
+                <select name="panel_type" required>
+                    <option value="usgs">USGS Gauge</option>
+                    <option value="nyiso">NYISO PTID</option>
+                    <option value="reach">NOAA Reach</option>
+                </select>
+                <input type="text" name="external_id" placeholder="Gauge / PTID / Reach ID" required />
+                <select name="direction">
+                    <option value="above">Alert when above</option>
+                    <option value="below">Alert when below</option>
+                </select>
+                <input type="number" name="threshold_value" placeholder="Threshold value" step="any" required />
+                <button type="submit" id="manage-alert-form-submit">Save</button>
+                <button type="button" id="manage-alert-form-cancel" class="cancel-btn">Cancel</button>
+            </form>
+
+            <p class="save-site-status" id="manage-alerts-status"></p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
