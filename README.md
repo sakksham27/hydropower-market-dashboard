@@ -6,7 +6,6 @@ A live dashboard that overlays **river streamflow**, **wholesale electricity pri
 
 Built on three free, public, government data sources. No paid market-data subscriptions required, and the app itself runs on a $0 hosting stack (see [Deployment](#deployment)).
 
-![Dashboard demo showing NYISO electricity price, USGS streamflow, and NOAA streamflow forecast panels side by side, with a strongest-generation-window insight banner](docs/demo.png)
 
 ## Why this exists
 
