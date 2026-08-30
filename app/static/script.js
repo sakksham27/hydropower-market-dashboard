@@ -1588,7 +1588,7 @@ function renderCombinedChart(option) {
     const yARange = yFocus ? computeFocusedAxisRange(rowsA, yFocus.startMs, yFocus.endMs) : null;
     const yBRange = yFocus ? computeFocusedAxisRange(rowsB, yFocus.startMs, yFocus.endMs) : null;
 
-    combinedSubtitle.textContent = `${seriesA.entityLabel} ${seriesA.id} — ${seriesA.valueLabel} overlaid with ${seriesB.entityLabel} ${seriesB.id} — ${seriesB.valueLabel}, one timeline, two axes.`;
+    combinedSubtitle.textContent = `${seriesA.entityLabel} ${seriesA.id}: ${seriesA.valueLabel} overlaid with ${seriesB.entityLabel} ${seriesB.id}: ${seriesB.valueLabel}, one timeline, two axes.`;
     combinedTitleId.textContent = `${seriesA.entityLabel} ${seriesA.id} & ${seriesB.entityLabel} ${seriesB.id}`;
     const rangeLabels = formatRange(minMs, maxMs);
     combinedTitleRange.textContent = `${rangeLabels.start} – ${rangeLabels.end}`;
@@ -1600,7 +1600,7 @@ function renderCombinedChart(option) {
         data: {
             datasets: [
                 {
-                    label: `${seriesA.entityLabel} ${seriesA.id} — ${seriesA.valueLabel}`,
+                    label: `${seriesA.entityLabel} ${seriesA.id}: ${seriesA.valueLabel}`,
                     data: rowsA,
                     borderColor: seriesA.color,
                     backgroundColor: seriesA.color,
@@ -1610,7 +1610,7 @@ function renderCombinedChart(option) {
                     spanGaps: true,
                 },
                 {
-                    label: `${seriesB.entityLabel} ${seriesB.id} — ${seriesB.valueLabel}`,
+                    label: `${seriesB.entityLabel} ${seriesB.id}: ${seriesB.valueLabel}`,
                     data: rowsB,
                     borderColor: seriesB.color,
                     backgroundColor: seriesB.color,
@@ -1815,12 +1815,12 @@ function updateInsightBanner() {
     if (opportunity.hourCount > 1) {
         const rangeLabels = formatRange(opportunity.startMs, opportunity.endMs);
         insightBannerText.innerHTML =
-            `<strong>Today's strongest window so far:</strong> ${rangeLabels.start} – ${rangeLabels.end} — ` +
+            `<strong>Today's strongest window so far:</strong> ${rangeLabels.start} – ${rangeLabels.end}, ` +
             `price averaged ${priceText} while flow held around ${flowText}. Worth watching for similar patterns.`;
     } else {
         const hourLabel = formatDateTime(opportunity.startMs);
         insightBannerText.innerHTML =
-            `<strong>Best matched hour so far:</strong> ${hourLabel} — price was ${priceText} with flow around ${flowText}.`;
+            `<strong>Best matched hour so far:</strong> ${hourLabel}, price was ${priceText} with flow around ${flowText}.`;
     }
 
     insightBannerMain.title = insightBannerText.textContent;
@@ -1882,7 +1882,7 @@ function updateGlobalRefreshButton() {
         minute: "2-digit",
         second: "2-digit",
     });
-    globalRefreshBtn.title = `Panels last refreshed at ${exact}. Auto-refreshes every 5 min — click to refresh now.`;
+    globalRefreshBtn.title = `Panels last refreshed at ${exact}. Auto-refreshes every 5 min. Click to refresh now.`;
 }
 
 function refreshAllWidgets() {
@@ -1968,7 +1968,7 @@ function renderNotificationList(notifications) {
         detail.className = "notification-item-detail";
         const verb = n.direction === "above" ? "rose above" : "dropped below";
         detail.textContent =
-            `Value ${verb} ${n.threshold_value} — observed ${n.observed_value}` + (n.email_sent ? " · emailed" : "");
+            `Value ${verb} ${n.threshold_value}, observed ${n.observed_value}` + (n.email_sent ? " · emailed" : "");
         item.appendChild(detail);
 
         const time = document.createElement("div");

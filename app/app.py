@@ -765,7 +765,7 @@ def check_all_alerts():
                     f"Your alert for {t['panel_type'].upper()} {t['external_id']} has triggered.\n\n"
                     f"Condition: value {t['direction']} {t['threshold_value']}\n"
                     f"Observed value: {value}\n\n"
-                    f"— Plant Monitoring System"
+                    f"- Hydropower Market Dashboard"
                 )
                 email_sent = send_alert_email(t["email"], subject, body)
             db.create_alert_notification(

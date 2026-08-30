@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>Plant Monitoring System</title>
+    <title>Hydropower Market Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -11,7 +11,7 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <div class="page-header">
-        <h1 class="page-title">Plant Monitoring System</h1>
+        <h1 class="page-title">Hydropower Market Dashboard</h1>
         <div class="page-header-actions">
             <button type="button" id="global-refresh-btn" class="global-refresh-btn" aria-label="Refresh all panels now">
                 <span class="global-refresh-icon" aria-hidden="true">&#8635;</span>
@@ -45,7 +45,7 @@
     </div>
 
     <p class="dashboard-hint" id="dashboard-hint">
-        New here? Enter an ID in any panel below and press Submit &mdash; or save a combination of IDs under one
+        New here? Enter an ID in any panel below and press Submit, or save a combination of IDs under one
         name from your profile menu, so you can load every panel at once from the dropdown below.
         <button type="button" class="dashboard-hint-dismiss" id="dashboard-hint-dismiss" aria-label="Dismiss tip">&times;</button>
     </p>
@@ -61,7 +61,7 @@
         <span class="info-tooltip">
             <button type="button" class="info-icon" aria-describedby="insight-info-tooltip">?</button>
             <span class="info-tooltip-content" id="insight-info-tooltip" role="tooltip">
-                &ldquo;Strongest&rdquo; = the run of hours with the highest average (price &times; flow) &mdash;
+                &ldquo;Strongest&rdquo; = the run of hours with the highest average (price &times; flow),
                 a rough proxy for relative generation revenue, not a prediction. Compares today's realized
                 NYISO price against today's actual USGS streamflow, hour by hour, against today's own average.
             </span>
@@ -117,8 +117,8 @@
 
         <section class="card" id="nyiso-widget">
             <div class="card-title-row">
-                <h2 class="card-title">Electricity Price &mdash; NYISO Real-Time LBMP</h2>
-                <span class="panel-badge panel-badge-live" title="Live real-time price — source typically updates every 5 min">LIVE</span>
+                <h2 class="card-title">Electricity Price: NYISO Real-Time LBMP</h2>
+                <span class="panel-badge panel-badge-live" title="Live real-time price (source typically updates every 5 min)">LIVE</span>
             </div>
             <p class="card-subtitle">Live wholesale electricity price for one grid pricing node (PTID).</p>
 
@@ -127,7 +127,7 @@
                 <span class="info-tooltip">
                     <button type="button" class="info-icon" aria-describedby="nyiso-info-tooltip">?</button>
                     <span class="info-tooltip-content" id="nyiso-info-tooltip" role="tooltip">
-                        PTID (Pricing Node ID) &mdash; identifies a specific point on the NY power grid where electricity price is measured.
+                        PTID (Pricing Node ID): identifies a specific point on the NY power grid where electricity price is measured.
                         <a href="https://www.nyiso.com" target="_blank" rel="noopener">nyiso.com</a>
                     </span>
                 </span>
@@ -177,7 +177,7 @@
                     </div>
                     <div class="range-labels">
                         <span class="range-start-label"></span>
-                        <span>&mdash;</span>
+                        <span>&ndash;</span>
                         <span class="range-end-label"></span>
                     </div>
                 </div>
@@ -195,8 +195,8 @@
 
         <section class="card" id="usgs-widget">
             <div class="card-title-row">
-                <h2 class="card-title">Streamflow &mdash; USGS</h2>
-                <span class="panel-badge panel-badge-live" title="Live gauge readings — source typically updates every 15 min">LIVE</span>
+                <h2 class="card-title">Streamflow: USGS</h2>
+                <span class="panel-badge panel-badge-live" title="Live gauge readings (source typically updates every 15 min)">LIVE</span>
             </div>
             <p class="card-subtitle">Live flow for one river gauge. Find a gauge number at waterdata.usgs.gov.</p>
 
@@ -205,7 +205,7 @@
                 <span class="info-tooltip">
                     <button type="button" class="info-icon" aria-describedby="usgs-info-tooltip">?</button>
                     <span class="info-tooltip-content" id="usgs-info-tooltip" role="tooltip">
-                        A USGS streamgage number &mdash; a unique ID for a monitoring station on a river or stream.
+                        A USGS streamgage number: a unique ID for a monitoring station on a river or stream.
                         <a href="https://waterdata.usgs.gov" target="_blank" rel="noopener">waterdata.usgs.gov</a>
                     </span>
                 </span>
@@ -255,7 +255,7 @@
                     </div>
                     <div class="range-labels">
                         <span class="range-start-label"></span>
-                        <span>&mdash;</span>
+                        <span>&ndash;</span>
                         <span class="range-end-label"></span>
                     </div>
                 </div>
@@ -273,8 +273,8 @@
 
         <section class="card" id="reach-widget">
             <div class="card-title-row">
-                <h2 class="card-title">Streamflow Forecast &mdash; NOAA NWPS</h2>
-                <span class="panel-badge panel-badge-forecast" title="Short-range forecast — source typically issued hourly">FORECAST</span>
+                <h2 class="card-title">Streamflow Forecast: NOAA NWPS</h2>
+                <span class="panel-badge panel-badge-forecast" title="Short-range forecast (source typically issued hourly)">FORECAST</span>
             </div>
             <p class="card-subtitle">Short-range flow forecast for one river reach.</p>
 
@@ -283,7 +283,7 @@
                 <span class="info-tooltip">
                     <button type="button" class="info-icon" aria-describedby="reach-info-tooltip">?</button>
                     <span class="info-tooltip-content" id="reach-info-tooltip" role="tooltip">
-                        NOAA reach ID &mdash; identifies a specific river segment used in the National Water Model forecast.
+                        NOAA reach ID: identifies a specific river segment used in the National Water Model forecast.
                         <a href="https://water.noaa.gov" target="_blank" rel="noopener">water.noaa.gov</a>
                     </span>
                 </span>
@@ -333,7 +333,7 @@
                     </div>
                     <div class="range-labels">
                         <span class="range-start-label"></span>
-                        <span>&mdash;</span>
+                        <span>&ndash;</span>
                         <span class="range-end-label"></span>
                     </div>
                 </div>
@@ -389,8 +389,8 @@
                 Enable alert notifications
             </label>
             <p class="alerts-enable-hint">
-                Off by default. Turn this on to see alert banners on your panels &mdash; and to have your saved
-                alerts checked in the background every few minutes, even while this page isn't open &mdash; when a
+                Off by default. Turn this on to see alert banners on your panels (and to have your saved
+                alerts checked in the background every few minutes, even while this page isn't open) when a
                 threshold is crossed. Your saved alerts below are kept either way.
             </p>
 
