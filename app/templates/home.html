@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>Hydropower Market Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    {% set active_page = "home" %}
+    {% include "_header.html" %}
+
+    <div class="home-hero">
+        <div class="home-hero-placeholder">
+            <div>
+                <span class="home-hero-placeholder-icon" aria-hidden="true">&#9889;</span>
+                <p class="home-hero-placeholder-text">Coming soon</p>
+                <p class="home-hero-placeholder-subtext">This overview will summarize flows and pricing at a glance.</p>
+            </div>
+        </div>
+    </div>
+
+    {% include "_modals.html" %}
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>Hydropower Market Dashboard &middot; Flows</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    {% set active_page = "flows" %}
+    {% include "_header.html" %}
+
+    <p class="dashboard-hint" id="dashboard-hint">
+        New here? Enter a gauge or reach ID below and press Submit, or save a site (gauge + PTID + reach) from
+        your profile menu so its gauge and reach IDs load here automatically.
+        <button type="button" class="dashboard-hint-dismiss" id="dashboard-hint-dismiss" aria-label="Dismiss tip">&times;</button>
+    </p>
+
+    <div class="control-bar">
+        <div class="control-bar-item">
+            <span class="control-bar-icon" aria-hidden="true" title="Saved Sites">&#128205;</span>
+            <label class="control-bar-label" for="saved-sites-select">Saved site:</label>
+            <select id="saved-sites-select" class="saved-sites-select">
+                <option value="">Select a saved site&hellip;</option>
+            </select>
+            <button type="button" id="manage-sites-link-btn" class="manage-sites-link-btn">Manage</button>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <section class="card" id="usgs-widget">
+            <div class="card-title-row">
+                <h2 class="card-title">Streamflow: USGS</h2>
+                <span class="panel-badge panel-badge-live" title="Live gauge readings (source typically updates every 15 min)">LIVE</span>
+            </div>
+            <p class="card-subtitle">Live flow for one river gauge. Find a gauge number at waterdata.usgs.gov.</p>
+
+            <div class="pinned-container">
+                <span class="pinned-label">Pinned gauges:</span>
+                <span class="info-tooltip">
+                    <button type="button" class="info-icon" aria-describedby="usgs-info-tooltip">?</button>
+                    <span class="info-tooltip-content" id="usgs-info-tooltip" role="tooltip">
+                        A USGS streamgage number: a unique ID for a monitoring station on a river or stream.
+                        <a href="https://waterdata.usgs.gov" target="_blank" rel="noopener">waterdata.usgs.gov</a>
+                    </span>
+                </span>
+                <div class="pinned-chips"></div>
+            </div>
+
+            <form class="entry-form">
+                <div class="entry-input-wrap">
+                    <input id="usgs-input" class="entry-input" type="text" placeholder="Gauge number, e.g. 01646500" aria-label="Gauge number" autocomplete="off" required />
+                    <span class="entry-input-hint" aria-hidden="true"><span class="entry-input-hint-text"></span></span>
+                </div>
+                <button type="button" class="pin-icon-btn" title="Pin this gauge for quick access" aria-label="Pin this gauge">&#128204;</button>
+                <button type="submit">Submit</button>
+                <button type="button" class="add-site-btn" title="Compare another gauge on this chart">+ Compare</button>
+            </form>
+            <p class="status"></p>
+
+            <div class="chart-container" hidden>
+                <div class="chart-header">
+                    <div class="chart-title-block">
+                        <p class="chart-title-id"></p>
+                        <p class="chart-title-range"></p>
+                    </div>
+                    <div class="chart-header-actions">
+                        <button type="button" class="scale-toggle-btn" aria-pressed="false" title="Auto-scale zooms the axis to the visible data range. Full range starts from zero so fluctuations aren't exaggerated.">Auto-scale</button>
+                        <button type="button" class="expand-btn" title="Expand chart" aria-label="Expand chart">&#9974; Expand</button>
+                    </div>
+                </div>
+
+                <p class="alert-banner" hidden></p>
+                <div class="extra-series-chips"></div>
+
+                <div class="chart-skeleton" aria-hidden="true" hidden>
+                    <div class="skeleton skeleton-legend"></div>
+                    <div class="skeleton skeleton-canvas"></div>
+                </div>
+                <p class="loading-message" hidden></p>
+
+                <div class="chart-canvas-wrap">
+                    <canvas class="readings-chart"></canvas>
+                </div>
+
+                <div class="range-slider-container">
+                    <div class="range-slider">
+                        <input type="range" class="range-start" min="0" max="24" step="0.5" value="0" />
+                        <input type="range" class="range-end" min="0" max="24" step="0.5" value="24" />
+                    </div>
+                    <div class="range-labels">
+                        <span class="range-start-label"></span>
+                        <span>&ndash;</span>
+                        <span class="range-end-label"></span>
+                    </div>
+                </div>
+
+                <div class="download-container">
+                    <select class="download-format">
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                        <option value="xml">XML</option>
+                    </select>
+                    <button type="button" class="download-btn">Download data</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" id="reach-widget">
+            <div class="card-title-row">
+                <h2 class="card-title">Streamflow Forecast: NOAA NWPS</h2>
+                <span class="panel-badge panel-badge-forecast" title="Short-range forecast (source typically issued hourly)">FORECAST</span>
+            </div>
+            <p class="card-subtitle">Short-range flow forecast for one river reach.</p>
+
+            <div class="pinned-container">
+                <span class="pinned-label">Pinned reach IDs:</span>
+                <span class="info-tooltip">
+                    <button type="button" class="info-icon" aria-describedby="reach-info-tooltip">?</button>
+                    <span class="info-tooltip-content" id="reach-info-tooltip" role="tooltip">
+                        NOAA reach ID: identifies a specific river segment used in the National Water Model forecast.
+                        <a href="https://water.noaa.gov" target="_blank" rel="noopener">water.noaa.gov</a>
+                    </span>
+                </span>
+                <div class="pinned-chips"></div>
+            </div>
+
+            <form class="entry-form">
+                <div class="entry-input-wrap">
+                    <input id="reach-input" class="entry-input" type="text" placeholder="Reach ID, e.g. 22288025" aria-label="Reach ID" autocomplete="off" required />
+                    <span class="entry-input-hint" aria-hidden="true"><span class="entry-input-hint-text"></span></span>
+                </div>
+                <button type="button" class="pin-icon-btn" title="Pin this reach ID for quick access" aria-label="Pin this reach ID">&#128204;</button>
+                <button type="submit">Submit</button>
+                <button type="button" class="add-site-btn" title="Compare another reach ID on this chart">+ Compare</button>
+            </form>
+            <p class="status"></p>
+
+            <div class="chart-container" hidden>
+                <div class="chart-header">
+                    <div class="chart-title-block">
+                        <p class="chart-title-id"></p>
+                        <p class="chart-title-range"></p>
+                    </div>
+                    <div class="chart-header-actions">
+                        <button type="button" class="scale-toggle-btn" aria-pressed="false" title="Auto-scale zooms the axis to the visible data range. Full range starts from zero so fluctuations aren't exaggerated.">Auto-scale</button>
+                        <button type="button" class="expand-btn" title="Expand chart" aria-label="Expand chart">&#9974; Expand</button>
+                    </div>
+                </div>
+
+                <p class="alert-banner" hidden></p>
+                <div class="extra-series-chips"></div>
+
+                <div class="chart-skeleton" aria-hidden="true" hidden>
+                    <div class="skeleton skeleton-legend"></div>
+                    <div class="skeleton skeleton-canvas"></div>
+                </div>
+                <p class="loading-message" hidden></p>
+
+                <div class="chart-canvas-wrap">
+                    <canvas class="readings-chart"></canvas>
+                </div>
+
+                <div class="range-slider-container">
+                    <div class="range-slider">
+                        <input type="range" class="range-start" min="0" max="24" step="0.5" value="0" />
+                        <input type="range" class="range-end" min="0" max="24" step="0.5" value="24" />
+                    </div>
+                    <div class="range-labels">
+                        <span class="range-start-label"></span>
+                        <span>&ndash;</span>
+                        <span class="range-end-label"></span>
+                    </div>
+                </div>
+
+                <div class="download-container">
+                    <select class="download-format">
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                        <option value="xml">XML</option>
+                    </select>
+                    <button type="button" class="download-btn">Download data</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="card placeholder-card">
+            <div>
+                <span class="placeholder-card-icon" aria-hidden="true">&#128196;</span>
+                <p class="placeholder-card-text">Coming soon</p>
+                <p class="placeholder-card-subtext">Reserved for a future flows panel.</p>
+            </div>
+        </section>
+    </div>
+
+    {% include "_modals.html" %}
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

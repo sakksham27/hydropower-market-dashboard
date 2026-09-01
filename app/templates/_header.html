@@ -1,0 +1,42 @@
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <div class="page-header">
+        <h1 class="page-title">Hydropower Market Dashboard</h1>
+        <div class="page-header-actions">
+            <button type="button" id="global-refresh-btn" class="global-refresh-btn" aria-label="Refresh all panels now">
+                <span class="global-refresh-icon" aria-hidden="true">&#8635;</span>
+                <span id="global-refresh-label">Updated just now</span>
+            </button>
+            <div class="notification-menu">
+                <button type="button" class="notification-bell-btn" id="notification-bell-btn" aria-label="Alert notifications">
+                    <span aria-hidden="true">&#128276;</span>
+                    <span class="notification-badge" id="notification-badge" hidden>0</span>
+                </button>
+                <div class="notification-dropdown" id="notification-dropdown" hidden>
+                    <div class="notification-dropdown-header">
+                        <span>Notifications</span>
+                        <button type="button" class="notification-mark-read-btn" id="notification-mark-read-btn">Mark all read</button>
+                    </div>
+                    <div class="notification-list" id="notification-list"></div>
+                </div>
+            </div>
+            <div class="profile-menu">
+                <button type="button" class="profile-icon" id="profile-icon-btn" aria-label="Profile menu">{{ (username or "?")[0]|upper }}</button>
+                <div class="profile-dropdown" id="profile-dropdown" hidden>
+                    <p class="profile-username">{{ username }}</p>
+                    <button type="button" class="profile-menu-btn" id="manage-sites-open-btn">Manage Sites</button>
+                    <button type="button" class="profile-menu-btn" id="manage-alerts-open-btn">Manage Alerts</button>
+                    <form method="POST" action="{{ url_for('logout') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <button type="submit" class="profile-logout-btn">Log out</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="site-nav" aria-label="Main">
+        <a href="{{ url_for('home') }}" class="site-nav-link{{ ' active' if active_page == 'home' else '' }}">Home</a>
+        <a href="{{ url_for('flows') }}" class="site-nav-link{{ ' active' if active_page == 'flows' else '' }}">Flows</a>
+        <a href="{{ url_for('pricing') }}" class="site-nav-link{{ ' active' if active_page == 'pricing' else '' }}">Pricing</a>
+    </nav>

@@ -29,6 +29,105 @@ body {
     gap: 0.6rem;
 }
 
+.site-nav {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    max-width: 1600px;
+    margin: 0 auto 1.25rem;
+}
+
+.site-nav-link {
+    padding: 0.55rem 1.4rem;
+    border-radius: 8px;
+    border: 1px solid #e5e9e6;
+    background: #fff;
+    color: #4a5750;
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.site-nav-link:hover {
+    background: #eaf2ec;
+    color: #1c3d2e;
+}
+
+.site-nav-link.active {
+    background: #2f7a4f;
+    border-color: #2f7a4f;
+    color: #fff;
+}
+
+.placeholder-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 2px dashed #dbe2dd;
+    box-shadow: none;
+}
+
+.placeholder-card-icon {
+    display: block;
+    font-size: 1.7rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.55;
+}
+
+.placeholder-card-text {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #9aa39d;
+}
+
+.placeholder-card-subtext {
+    margin: 0.3rem 0 0;
+    font-size: 0.78rem;
+    color: #b7bdb9;
+}
+
+.home-hero {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.home-hero-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    background: #fff;
+    border: 2px dashed #dbe2dd;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.home-hero-placeholder-icon {
+    display: block;
+    font-size: 2.4rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.55;
+}
+
+.home-hero-placeholder-text {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #9aa39d;
+}
+
+.home-hero-placeholder-subtext {
+    margin: 0.4rem 0 0;
+    font-size: 0.85rem;
+    color: #b7bdb9;
+}
+
 .global-refresh-btn {
     display: inline-flex;
     align-items: center;
@@ -459,147 +558,6 @@ body {
     background: #e5e9e6;
     flex-shrink: 0;
 }
-
-.insight-banner {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    max-width: 1600px;
-    margin: 0 auto 0.6rem;
-    background: #fff8e6;
-    border: 1px solid #f0d585;
-    border-left: 4px solid #b8860b;
-    border-radius: 10px;
-    padding: 0.5rem 0.9rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-}
-
-.insight-banner[hidden] {
-    display: none;
-}
-
-/* Plain, non-interactive banner text — no longer clickable itself. Only
-   .insight-banner-cta (the "View expanded chart" button) responds to
-   hover/click; this row exists purely to lay out the icon and text. */
-.insight-banner-main {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-}
-
-.insight-banner-icon {
-    font-size: 1.05rem;
-    flex-shrink: 0;
-}
-
-.insight-banner-text {
-    flex: 1;
-    min-width: 0;
-    margin: 0;
-    font-size: 0.83rem;
-    line-height: 1.4;
-    color: #4a3b0a;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.insight-banner-text strong {
-    color: #1c3d2e;
-}
-
-/* The clickable part — jumps to the merged Price+Forecast chart with the
-   flagged window shaded on it. Reset from a bare <button> so it keeps
-   looking like plain banner text, not a button, until hovered — but only
-   this piece, not the whole banner line. */
-.insight-banner-cta {
-    flex-shrink: 0;
-    border: none;
-    background: none;
-    padding: 0;
-    font: inherit;
-    font-size: 0.76rem;
-    font-weight: 600;
-    color: #8a6d1f;
-    white-space: nowrap;
-    cursor: pointer;
-    border-radius: 6px;
-}
-
-.insight-banner-cta:hover,
-.insight-banner-cta:focus-visible {
-    color: #1c3d2e;
-    text-decoration: underline;
-}
-
-.insight-banner-cta:focus-visible {
-    outline: 2px solid #b8860b;
-    outline-offset: 2px;
-}
-
-/* This info icon sits near the top-right of the page, where the shared
-   .info-tooltip-content default (centered, opening upward) would either
-   get clipped by the viewport top or overflow past the right edge. Opens
-   below and to the left of the "?" instead, scoped to just this instance
-   so the gauge/PTID/reach tooltips elsewhere keep their default placement. */
-#insight-info-tooltip {
-    top: calc(100% + 0.4rem);
-    bottom: auto;
-    left: auto;
-    right: 0;
-    transform: none;
-}
-
-.merge-select {
-    flex-shrink: 0;
-    padding: 0.4rem 0.6rem;
-    border: 1px solid #2f7a4f;
-    border-radius: 6px;
-    background: #fff;
-    color: #1f5a37;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.merge-select:hover:not(:disabled) {
-    background: #eaf2ec;
-}
-
-.merge-select:disabled {
-    border-color: #cde0d3;
-    color: #9bbfa9;
-    cursor: not-allowed;
-}
-
-.merge-select option:disabled {
-    color: #aaa;
-}
-
-.merge-toolbar-hint {
-    font-size: 0.76rem;
-    color: #6b6f6d;
-    font-style: italic;
-    white-space: nowrap;
-}
-
-.merge-toolbar-hint[hidden] {
-    display: none;
-}
-
-.combined-card {
-    grid-column: span 2;
-}
-
-.chart-canvas-wrap.combined-canvas-wrap {
-    height: var(--combined-canvas-height, 320px);
-}
-
-/* .chart-container.is-expanded .chart-canvas-wrap (defined with .card) wins
-   over the rule above once the combined chart is inside the Expand modal —
-   three classes beats two, so no extra override needed here. */
 
 .saved-sites-select {
     padding: 0.4rem 0.55rem;

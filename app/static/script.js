@@ -873,7 +873,8 @@ function createWidget(root, config) {
     };
 }
 
-const usgsWidget = createWidget(document.getElementById("usgs-widget"), {
+const usgsWidgetEl = document.getElementById("usgs-widget");
+const usgsWidget = usgsWidgetEl && createWidget(usgsWidgetEl, {
     storageKey: "pinnedGauges",
     panelType: "usgs",
     serviceLabel: "USGS",
@@ -901,7 +902,8 @@ const usgsWidget = createWidget(document.getElementById("usgs-widget"), {
     ],
 });
 
-const nyisoWidget = createWidget(document.getElementById("nyiso-widget"), {
+const nyisoWidgetEl = document.getElementById("nyiso-widget");
+const nyisoWidget = nyisoWidgetEl && createWidget(nyisoWidgetEl, {
     storageKey: "pinnedPtids",
     panelType: "nyiso",
     serviceLabel: "NYISO",
@@ -1460,7 +1462,8 @@ function createReachWidget(root, config) {
     };
 }
 
-const reachWidget = createReachWidget(document.getElementById("reach-widget"), {
+const reachWidgetEl = document.getElementById("reach-widget");
+const reachWidget = reachWidgetEl && createReachWidget(reachWidgetEl, {
     storageKey: "pinnedReachIds",
     panelType: "reach",
     serviceLabel: "NOAA",
@@ -1473,402 +1476,6 @@ const reachWidget = createReachWidget(document.getElementById("reach-widget"), {
         { key: "short_range", label: "Short Range", color: "#e07a1f", fillColor: "rgba(224, 122, 31, 0.15)" },
     ],
     columns: ["reach_id", "series", "reference_time", "valid_time", "flow", "units", "inserted_at"],
-});
-
-/**
- * "Merge graphs" — combines any two of the three panels into one dual-axis
- * chart on a shared timeline, hiding those two cards and showing the third
- * one alongside the combined view instead of all three side by side.
- * Always reflects whatever is currently loaded in each panel — it re-renders
- * live via onDataChange, not just once at merge time.
- */
-const mergeSelect = document.getElementById("merge-select");
-const mergeHint = document.getElementById("merge-toolbar-hint");
-const usgsWidgetEl = document.getElementById("usgs-widget");
-const nyisoWidgetEl = document.getElementById("nyiso-widget");
-const reachWidgetEl = document.getElementById("reach-widget");
-const combinedWidgetEl = document.getElementById("combined-widget");
-const combinedSubtitle = document.getElementById("combined-subtitle");
-const combinedTitleId = document.getElementById("combined-title-id");
-const combinedTitleRange = document.getElementById("combined-title-range");
-const combinedCanvas = document.getElementById("combined-chart-canvas");
-const combinedChartContainer = document.querySelector("#combined-widget .chart-container");
-
-const ALL_PANEL_ELS = [nyisoWidgetEl, usgsWidgetEl, reachWidgetEl];
-
-const MERGE_OPTIONS = [
-    { value: "nyiso-usgs", widgetA: nyisoWidget, widgetB: usgsWidget, elA: nyisoWidgetEl, elB: usgsWidgetEl },
-    { value: "nyiso-reach", widgetA: nyisoWidget, widgetB: reachWidget, elA: nyisoWidgetEl, elB: reachWidgetEl },
-    { value: "usgs-reach", widgetA: usgsWidget, widgetB: reachWidget, elA: usgsWidgetEl, elB: reachWidgetEl },
-];
-
-let combinedChartInstance = null;
-let combinedHighlightRange = null; // {startMs, endMs} — shaded band, set via the insight banner
-let combinedFocusRange = null; // {startMs, endMs} — zooms the x-axis to this span instead of full data extent
-
-// Scoped to just the combined chart (passed via the per-chart `plugins`
-// array below, not Chart.register) so it never affects the other panels.
-const combinedHighlightPlugin = {
-    id: "windowHighlight",
-    beforeDatasetsDraw(chart) {
-        if (!combinedHighlightRange) return;
-        const { ctx, chartArea, scales } = chart;
-        const left = scales.x.getPixelForValue(combinedHighlightRange.startMs);
-        const right = scales.x.getPixelForValue(combinedHighlightRange.endMs);
-        ctx.save();
-        ctx.fillStyle = "rgba(184, 134, 11, 0.16)";
-        ctx.fillRect(
-            Math.max(left, chartArea.left),
-            chartArea.top,
-            Math.min(right, chartArea.right) - Math.max(left, chartArea.left),
-            chartArea.bottom - chartArea.top
-        );
-        ctx.restore();
-    },
-};
-
-function remainingPanelEl(option) {
-    return ALL_PANEL_ELS.find((el) => el !== option.elA && el !== option.elB);
-}
-
-function updateMergeOptionsAvailability() {
-    let anyAvailable = false;
-    MERGE_OPTIONS.forEach((option) => {
-        const available = !!option.widgetA.getPrimarySeries() && !!option.widgetB.getPrimarySeries();
-        const optionEl = mergeSelect.querySelector(`option[value="${option.value}"]`);
-        optionEl.disabled = !available;
-        if (available) anyAvailable = true;
-    });
-    mergeSelect.disabled = !anyAvailable && !mergeSelect.value;
-    mergeHint.hidden = anyAvailable || !!mergeSelect.value;
-
-    // If the currently-merged pair lost its data (e.g. a refresh came back
-    // empty), fall back to showing all three rather than a stale/broken chart.
-    const activeOption = MERGE_OPTIONS.find((o) => o.value === mergeSelect.value);
-    if (activeOption) {
-        const stillAvailable = !!activeOption.widgetA.getPrimarySeries() && !!activeOption.widgetB.getPrimarySeries();
-        if (!stillAvailable) {
-            mergeSelect.value = "";
-            applySelection("");
-        }
-    }
-}
-
-// When focused on a window, the y-axis should zoom with it — otherwise the
-// axis stays scaled to the *entire day's* min/max (Chart.js scales an axis
-// to its whole dataset by default, regardless of the visible x-range), and
-// a window that's flatter than the full day gets squashed into an
-// uninformative sliver. Recomputes the range from only the rows actually
-// inside [minMs, maxMs], then adds ~15% headroom so the line doesn't touch
-// the top/bottom edges.
-function computeFocusedAxisRange(rows, minMs, maxMs) {
-    // maxMs is an exclusive upper bound (computeOpportunityWindow builds it
-    // as "start of the hour after the last qualifying hour") — using <=
-    // here let a reading landing exactly on that boundary sneak in from the
-    // very next, non-qualifying hour, dragging the range back out.
-    const visible = rows.filter((r) => {
-        const t = r.x.getTime();
-        return t >= minMs && t < maxMs;
-    });
-    const values = (visible.length ? visible : rows).map((r) => r.y).filter((v) => v !== null && v !== undefined);
-    if (!values.length) return null;
-
-    const dataMin = Math.min(...values);
-    const dataMax = Math.max(...values);
-    const span = dataMax - dataMin || Math.abs(dataMax) || 1;
-    const padding = span * 0.15;
-    return { min: dataMin - padding, max: dataMax + padding };
-}
-
-function renderCombinedChart(option) {
-    const seriesA = option.widgetA.getPrimarySeries();
-    const seriesB = option.widgetB.getPrimarySeries();
-    if (!seriesA || !seriesB) return;
-
-    const rowsA = seriesA.readings.map((r) => ({ x: new Date(r.datetime), y: r.value }));
-    const rowsB = seriesB.readings.map((r) => ({ x: new Date(r.datetime), y: r.value }));
-    const allMs = rowsA.concat(rowsB).map((r) => r.x.getTime());
-    const dataMinMs = Math.min(...allMs);
-    const dataMaxMs = Math.max(...allMs);
-
-    // Normally shows the full extent of both series; arriving via the
-    // insight banner's "View on chart" narrows this to the flagged window
-    // (plus a few hours of context either side) instead, so that window is
-    // the central focus rather than one sliver of a full-day chart.
-    const minMs = combinedFocusRange ? Math.max(dataMinMs, combinedFocusRange.startMs) : dataMinMs;
-    const maxMs = combinedFocusRange ? Math.min(dataMaxMs, combinedFocusRange.endMs) : dataMaxMs;
-
-    // Zoom the y-axis to the highlighted window itself, not the wider padded
-    // x-range around it — the x-axis padding is there for context, but the
-    // y-axis should stay centered on the strength window's own values so it
-    // isn't diluted by the flatter "before/after" data on either side.
-    const yFocus = combinedHighlightRange || combinedFocusRange;
-    const yARange = yFocus ? computeFocusedAxisRange(rowsA, yFocus.startMs, yFocus.endMs) : null;
-    const yBRange = yFocus ? computeFocusedAxisRange(rowsB, yFocus.startMs, yFocus.endMs) : null;
-
-    combinedSubtitle.textContent = `${seriesA.entityLabel} ${seriesA.id}: ${seriesA.valueLabel} overlaid with ${seriesB.entityLabel} ${seriesB.id}: ${seriesB.valueLabel}, one timeline, two axes.`;
-    combinedTitleId.textContent = `${seriesA.entityLabel} ${seriesA.id} & ${seriesB.entityLabel} ${seriesB.id}`;
-    const rangeLabels = formatRange(minMs, maxMs);
-    combinedTitleRange.textContent = `${rangeLabels.start} – ${rangeLabels.end}`;
-
-    if (combinedChartInstance) combinedChartInstance.destroy();
-    combinedChartInstance = new Chart(combinedCanvas, {
-        type: "line",
-        plugins: [combinedHighlightPlugin],
-        data: {
-            datasets: [
-                {
-                    label: `${seriesA.entityLabel} ${seriesA.id}: ${seriesA.valueLabel}`,
-                    data: rowsA,
-                    borderColor: seriesA.color,
-                    backgroundColor: seriesA.color,
-                    yAxisID: "yA",
-                    tension: 0.2,
-                    pointRadius: 2,
-                    spanGaps: true,
-                },
-                {
-                    label: `${seriesB.entityLabel} ${seriesB.id}: ${seriesB.valueLabel}`,
-                    data: rowsB,
-                    borderColor: seriesB.color,
-                    backgroundColor: seriesB.color,
-                    yAxisID: "yB",
-                    tension: 0.2,
-                    pointRadius: 2,
-                    spanGaps: true,
-                },
-            ],
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: "nearest", intersect: true },
-            plugins: { legend: { display: true } },
-            scales: {
-                x: {
-                    type: "time",
-                    min: new Date(minMs),
-                    max: new Date(maxMs),
-                    time: { tooltipFormat: "MMM d, HH:mm" },
-                    title: { display: true, text: "Time" },
-                },
-                yA: {
-                    type: "linear",
-                    position: "left",
-                    // grace only makes sense for the auto-ranged (non-focused)
-                    // case — combining it with an explicit min/max below
-                    // caused Chart.js to distort those bounds instead of
-                    // respecting them.
-                    ...(yARange ? { min: yARange.min, max: yARange.max } : { grace: "10%" }),
-                    title: { display: true, text: seriesA.valueLabel },
-                },
-                yB: {
-                    type: "linear",
-                    position: "right",
-                    grid: { drawOnChartArea: false },
-                    ...(yBRange ? { min: yBRange.min, max: yBRange.max } : { grace: "10%" }),
-                    title: { display: true, text: seriesB.valueLabel },
-                },
-            },
-        },
-    });
-}
-
-function applySelection(value, { highlightRange = null, focusRange = null } = {}) {
-    combinedHighlightRange = highlightRange;
-    combinedFocusRange = focusRange;
-    const option = MERGE_OPTIONS.find((o) => o.value === value);
-
-    if (!option) {
-        ALL_PANEL_ELS.forEach((el) => {
-            el.hidden = false;
-        });
-        combinedWidgetEl.hidden = true;
-        updateMergeOptionsAvailability();
-        return;
-    }
-
-    option.elA.hidden = true;
-    option.elB.hidden = true;
-    remainingPanelEl(option).hidden = false;
-    combinedWidgetEl.hidden = false;
-    renderCombinedChart(option);
-    updateMergeOptionsAvailability();
-}
-
-mergeSelect.addEventListener("change", () => {
-    // A manual dropdown change is a fresh look at the data, not "go to the
-    // window I clicked" — clears any highlight left over from the banner.
-    applySelection(mergeSelect.value);
-});
-
-[usgsWidget, nyisoWidget, reachWidget].forEach((widget) => {
-    widget.onDataChange(() => {
-        updateMergeOptionsAvailability();
-        const activeOption = MERGE_OPTIONS.find((o) => o.value === mergeSelect.value);
-        if (activeOption) renderCombinedChart(activeOption);
-    });
-});
-
-updateMergeOptionsAvailability();
-
-/**
- * "Revenue opportunity" insight: looks at today's already-realized NYISO
- * price alongside today's actual USGS streamflow and calls out the
- * strongest overlapping window (highest price × flow, a proxy for relative
- * revenue). Deliberately uses live/realized data on BOTH sides — USGS
- * gauge readings, not the NOAA forecast — so the whole thing is a
- * same-day pattern observation ("this is what happened"), not a mix of
- * fact and prediction. Framed as "today's pattern so far", not a forecast.
- */
-const insightBanner = document.getElementById("insight-banner");
-const insightBannerMain = document.getElementById("insight-banner-main");
-const insightBannerText = document.getElementById("insight-banner-text");
-const insightBannerCtaBtn = document.getElementById("insight-banner-cta-btn");
-
-function hourBucketKey(ms) {
-    return Math.floor(ms / 3600000);
-}
-
-function averageOf(numbers) {
-    return numbers.reduce((sum, n) => sum + n, 0) / numbers.length;
-}
-
-// Buckets both series into hourly averages, then finds the contiguous run
-// of above-average hours (by price × flow) with the highest average score —
-// falling back to the single best hour when the data is too sparse for a
-// multi-hour run.
-function computeOpportunityWindow() {
-    const price = nyisoWidget.getPrimarySeries();
-    const flow = usgsWidget.getPrimarySeries();
-    if (!price || !flow) return null;
-
-    const priceByHour = new Map();
-    price.readings.forEach((r) => {
-        const key = hourBucketKey(new Date(r.datetime).getTime());
-        if (!priceByHour.has(key)) priceByHour.set(key, []);
-        priceByHour.get(key).push(r.value);
-    });
-
-    const flowByHour = new Map();
-    flow.readings.forEach((r) => {
-        const key = hourBucketKey(new Date(r.datetime).getTime());
-        if (!flowByHour.has(key)) flowByHour.set(key, []);
-        flowByHour.get(key).push(r.value);
-    });
-
-    const hours = [...priceByHour.keys()]
-        .filter((key) => flowByHour.has(key))
-        .sort((a, b) => a - b)
-        .map((key) => {
-            const avgPrice = averageOf(priceByHour.get(key));
-            const avgFlow = averageOf(flowByHour.get(key));
-            return { key, avgPrice, avgFlow, score: avgPrice * avgFlow };
-        });
-
-    if (!hours.length) return null;
-
-    if (hours.length === 1) {
-        const h = hours[0];
-        return { startMs: h.key * 3600000, endMs: (h.key + 1) * 3600000, avgPrice: h.avgPrice, avgFlow: h.avgFlow, hourCount: 1 };
-    }
-
-    // Mean-based threshold rather than a fixed percentile: a percentile
-    // index breaks down when the genuinely strong hours are a small
-    // minority (e.g. 3 of 22) — the index can still land inside the tied
-    // "low" cluster and sweep the whole day into one run. "Above average"
-    // adapts to the actual shape of the data instead.
-    const threshold = averageOf(hours.map((h) => h.score));
-
-    const runs = [];
-    let current = null;
-    hours.forEach((h, i) => {
-        const qualifies = h.score > threshold;
-        const isConsecutive = i > 0 && hours[i - 1].key === h.key - 1;
-        if (qualifies && current && isConsecutive) {
-            current.push(h);
-        } else if (qualifies) {
-            current = [h];
-            runs.push(current);
-        } else {
-            current = null;
-        }
-    });
-
-    const scoredRuns = (runs.length ? runs : [[hours.reduce((a, b) => (b.score > a.score ? b : a))]]).map((run) => ({
-        run,
-        avgScore: averageOf(run.map((h) => h.score)),
-    }));
-
-    let best = scoredRuns[0];
-    scoredRuns.forEach((candidate) => {
-        if (
-            candidate.avgScore > best.avgScore ||
-            (candidate.avgScore === best.avgScore && candidate.run.length > best.run.length)
-        ) {
-            best = candidate;
-        }
-    });
-
-    const bestRun = best.run;
-    return {
-        startMs: bestRun[0].key * 3600000,
-        endMs: (bestRun[bestRun.length - 1].key + 1) * 3600000,
-        avgPrice: averageOf(bestRun.map((h) => h.avgPrice)),
-        avgFlow: averageOf(bestRun.map((h) => h.avgFlow)),
-        hourCount: bestRun.length,
-    };
-}
-
-function updateInsightBanner() {
-    const opportunity = computeOpportunityWindow();
-    if (!opportunity) {
-        insightBanner.hidden = true;
-        return;
-    }
-
-    const priceText = `$${opportunity.avgPrice.toFixed(2)}/MWh`;
-    const flowText = `${Math.round(opportunity.avgFlow)} ft³/s`;
-
-    if (opportunity.hourCount > 1) {
-        const rangeLabels = formatRange(opportunity.startMs, opportunity.endMs);
-        insightBannerText.innerHTML =
-            `<strong>Today's strongest window so far:</strong> ${rangeLabels.start} – ${rangeLabels.end}, ` +
-            `price averaged ${priceText} while flow held around ${flowText}. Worth watching for similar patterns.`;
-    } else {
-        const hourLabel = formatDateTime(opportunity.startMs);
-        insightBannerText.innerHTML =
-            `<strong>Best matched hour so far:</strong> ${hourLabel}, price was ${priceText} with flow around ${flowText}.`;
-    }
-
-    insightBannerMain.title = insightBannerText.textContent;
-    insightBanner.hidden = false;
-}
-
-[nyisoWidget, usgsWidget].forEach((widget) => {
-    widget.onDataChange(updateInsightBanner);
-});
-
-updateInsightBanner();
-
-// "View on chart" — jumps to the merged Price+Streamflow view and shades
-// the flagged window directly on it, so the banner's claim is something you
-// can actually see rather than just read.
-const INSIGHT_FOCUS_PADDING_MS = 3 * 3600000; // ~3 hours of context on each side of the window
-
-insightBannerCtaBtn.addEventListener("click", () => {
-    const opportunity = computeOpportunityWindow();
-    if (!opportunity) return;
-
-    mergeSelect.value = "nyiso-usgs";
-    applySelection("nyiso-usgs", {
-        highlightRange: { startMs: opportunity.startMs, endMs: opportunity.endMs },
-        focusRange: {
-            startMs: opportunity.startMs - INSIGHT_FOCUS_PADDING_MS,
-            endMs: opportunity.endMs + INSIGHT_FOCUS_PADDING_MS,
-        },
-    });
-    openChartModal(combinedChartContainer, () => combinedChartInstance);
 });
 
 /**
@@ -1904,9 +1511,9 @@ function updateGlobalRefreshButton() {
 }
 
 function refreshAllWidgets() {
-    usgsWidget.refresh();
-    nyisoWidget.refresh();
-    reachWidget.refresh();
+    usgsWidget?.refresh();
+    nyisoWidget?.refresh();
+    reachWidget?.refresh();
     loadNotifications();
     lastRefreshedAt = Date.now();
     updateGlobalRefreshButton();
@@ -2072,6 +1679,7 @@ function applySavedId(inputId, value) {
 }
 
 function renderSavedSitesSelect() {
+    if (!savedSitesSelect) return;
     const previousValue = savedSitesSelect.value;
     savedSitesSelect.innerHTML = '<option value="">Select a saved site…</option>';
     savedSitesCache.forEach((site) => {
@@ -2176,7 +1784,7 @@ async function deleteSite(site) {
     }
 }
 
-savedSitesSelect.addEventListener("change", () => {
+savedSitesSelect?.addEventListener("change", () => {
     const site = savedSitesCache.find((s) => String(s.id) === savedSitesSelect.value);
     if (!site) return;
 
@@ -2200,7 +1808,7 @@ function openManageSitesModal() {
 manageSitesOpenBtn.addEventListener("click", openManageSitesModal);
 
 const manageSitesLinkBtn = document.getElementById("manage-sites-link-btn");
-manageSitesLinkBtn.addEventListener("click", openManageSitesModal);
+manageSitesLinkBtn?.addEventListener("click", openManageSitesModal);
 
 manageSitesCloseBtn.addEventListener("click", () => {
     manageSitesBackdrop.hidden = true;
@@ -2258,11 +1866,11 @@ const DASHBOARD_HINT_DISMISSED_KEY = "dashboardHintDismissed";
 const dashboardHint = document.getElementById("dashboard-hint");
 const dashboardHintDismiss = document.getElementById("dashboard-hint-dismiss");
 
-if (localStorage.getItem(DASHBOARD_HINT_DISMISSED_KEY)) {
+if (dashboardHint && localStorage.getItem(DASHBOARD_HINT_DISMISSED_KEY)) {
     dashboardHint.hidden = true;
 }
 
-dashboardHintDismiss.addEventListener("click", () => {
+dashboardHintDismiss?.addEventListener("click", () => {
     dashboardHint.hidden = true;
     localStorage.setItem(DASHBOARD_HINT_DISMISSED_KEY, "1");
 });
@@ -2287,9 +1895,9 @@ let alertsCache = [];
 const PANEL_TYPE_LABELS = { usgs: "USGS Gauge", nyiso: "NYISO PTID", reach: "NOAA Reach" };
 
 function refreshAllThresholds() {
-    usgsWidget.refreshThreshold();
-    nyisoWidget.refreshThreshold();
-    reachWidget.refreshThreshold();
+    usgsWidget?.refreshThreshold();
+    nyisoWidget?.refreshThreshold();
+    reachWidget?.refreshThreshold();
 }
 
 function renderManageAlertsList() {

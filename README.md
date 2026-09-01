@@ -18,13 +18,12 @@ This dashboard pulls both into one view, adds a forward-looking flow forecast, a
 
 ## Features
 
+- **Multi-page layout**: a Home overview, a Flows page, and a Pricing page, all reachable from the same nav bar.
 - **Live data panels** for three independent sources, each pinnable, comparable, and searchable by ID:
-  - **USGS streamflow**: real-time river discharge (cfs) at any USGS gauge.
-  - **NYISO real-time LBMP**: live wholesale electricity price at any NY grid pricing node (PTID).
-  - **NOAA NWPS short-range forecast**: National Water Model forecasted flow for a river reach.
-- **Combined/overlay view**: merge any two panels onto one dual-axis timeline (e.g. price vs. streamflow) to visually spot correlation.
-- **Revenue-window insight**: automatically highlights the strongest window of the day by price × flow, a rough proxy for relative generation value.
-- **Saved sites**: bundle a gauge + PTID + reach under one name (e.g. "Niagara Falls Plant") and load all three panels together.
+  - **USGS streamflow** (Flows page): real-time river discharge (cfs) at any USGS gauge.
+  - **NOAA NWPS short-range forecast** (Flows page): National Water Model forecasted flow for a river reach.
+  - **NYISO real-time LBMP** (Pricing page): live wholesale electricity price at any NY grid pricing node (PTID).
+- **Saved sites**: bundle a gauge + PTID + reach under one name (e.g. "Niagara Falls Plant"); selecting it fills in whichever IDs are relevant to the page you're on.
 - **Threshold alerts**: set "notify me when X is above/below Y" per site and data source.
   - A background poller re-checks every 5 minutes, even with no browser open.
   - Edge-triggered, so a stuck violation doesn't spam repeat notifications.
@@ -59,8 +58,12 @@ app/
 │   ├── start.js
 │   └── style.css
 └── templates/
-    ├── index.html            # Main dashboard
-    └── start.html             # Login / signup
+    ├── home.html             # Home overview (placeholder for now)
+    ├── flows.html             # USGS streamflow + NOAA forecast panels
+    ├── pricing.html            # NYISO price panel
+    ├── _header.html             # Shared page header + nav bar (included on every page)
+    ├── _modals.html              # Shared Manage Sites / Manage Alerts / chart-expand modals
+    └── start.html                # Login / signup
 ```
 
 ## Data sources
@@ -163,10 +166,9 @@ The live site runs on a **$0 hosting stack**: [Render](https://render.com) for t
 ## Usage
 
 1. Sign up for an account.
-2. In any panel, enter an ID (USGS gauge number, NYISO PTID, or NOAA reach ID) and hit Submit.
+2. Use the nav bar to go to **Flows** (USGS gauge + NOAA reach) or **Pricing** (NYISO PTID), enter an ID in a panel, and hit Submit.
 3. Pin frequently used IDs, or save a combination of all three under one site name from the profile menu.
-4. Use "Merge graphs" to overlay two panels on one chart.
-5. Open **Manage Alerts** from the profile menu to set thresholds and, optionally, email notifications.
+4. Open **Manage Alerts** from the profile menu to set thresholds and, optionally, email notifications.
 
 ## Security notes
 

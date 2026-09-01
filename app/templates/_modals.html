@@ -1,0 +1,82 @@
+    <div id="chart-modal-backdrop" class="modal-backdrop" hidden>
+        <div class="modal-panel" id="chart-modal-panel">
+            <button type="button" class="modal-close-btn" id="chart-modal-close" aria-label="Close">&times;</button>
+        </div>
+    </div>
+
+    <div id="manage-sites-modal-backdrop" class="modal-backdrop" hidden>
+        <div class="modal-panel manage-sites-panel">
+            <button type="button" class="modal-close-btn" id="manage-sites-close-btn" aria-label="Close">&times;</button>
+            <h2 class="manage-sites-title">Manage Sites</h2>
+
+            <div id="manage-sites-list" class="manage-sites-list"></div>
+
+            <button type="button" id="manage-sites-add-btn" class="save-site-btn">+ Add New Site</button>
+
+            <form id="manage-site-form" class="save-site-form" hidden>
+                <input type="hidden" name="site_id" />
+                <input type="text" name="name" placeholder="Site name, e.g. Niagara Falls Plant" required />
+                <input type="text" name="gauge_id" placeholder="Gauge number (optional)" />
+                <input type="text" name="ptid" placeholder="PTID (optional)" />
+                <input type="text" name="reach_id" placeholder="Reach ID (optional)" />
+                <button type="submit" id="manage-site-form-submit">Save</button>
+                <button type="button" id="manage-site-form-cancel" class="cancel-btn">Cancel</button>
+            </form>
+
+            <p class="save-site-status" id="manage-sites-status"></p>
+        </div>
+    </div>
+
+    <div id="manage-alerts-modal-backdrop" class="modal-backdrop" hidden>
+        <div class="modal-panel manage-sites-panel">
+            <button type="button" class="modal-close-btn" id="manage-alerts-close-btn" aria-label="Close">&times;</button>
+            <h2 class="manage-sites-title">Manage Alerts</h2>
+
+            <label class="alerts-enable-toggle">
+                <input type="checkbox" id="alerts-enabled-checkbox" />
+                Enable alert notifications
+            </label>
+            <p class="alerts-enable-hint">
+                Off by default. Turn this on to see alert banners on your panels (and to have your saved
+                alerts checked in the background every few minutes, even while this page isn't open) when a
+                threshold is crossed. Your saved alerts below are kept either way.
+            </p>
+
+            <div class="contact-settings">
+                <div class="contact-settings-title">Email notifications</div>
+                <form id="contact-settings-form" class="contact-settings-form">
+                    <input type="email" id="contact-email-input" placeholder="you@example.com" autocomplete="email" />
+                    <label class="checkbox-inline">
+                        <input type="checkbox" id="email-alerts-enabled-checkbox" />
+                        Also email me when an alert triggers
+                    </label>
+                    <button type="submit" id="contact-settings-save-btn">Save</button>
+                </form>
+                <p class="save-site-status" id="contact-settings-status"></p>
+            </div>
+
+            <div id="manage-alerts-list" class="manage-sites-list"></div>
+
+            <button type="button" id="manage-alerts-add-btn" class="save-site-btn">+ Add New Alert</button>
+
+            <form id="manage-alert-form" class="save-site-form" hidden>
+                <input type="hidden" name="original_panel_type" />
+                <input type="hidden" name="original_external_id" />
+                <select name="panel_type" required>
+                    <option value="usgs">USGS Gauge</option>
+                    <option value="nyiso">NYISO PTID</option>
+                    <option value="reach">NOAA Reach</option>
+                </select>
+                <input type="text" name="external_id" placeholder="Gauge / PTID / Reach ID" required />
+                <select name="direction">
+                    <option value="above">Alert when above</option>
+                    <option value="below">Alert when below</option>
+                </select>
+                <input type="number" name="threshold_value" placeholder="Threshold value" step="any" required />
+                <button type="submit" id="manage-alert-form-submit">Save</button>
+                <button type="button" id="manage-alert-form-cancel" class="cancel-btn">Cancel</button>
+            </form>
+
+            <p class="save-site-status" id="manage-alerts-status"></p>
+        </div>
+    </div>

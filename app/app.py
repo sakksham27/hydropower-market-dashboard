@@ -224,14 +224,26 @@ def clean_reach_data(payload: dict, reach_id: str) -> list[dict]:
 
 @app.route("/")
 @login_required
-def index():
-    return render_template("index.html", username=session.get("username"))
+def home():
+    return render_template("home.html", username=session.get("username"))
+
+
+@app.route("/flows")
+@login_required
+def flows():
+    return render_template("flows.html", username=session.get("username"))
+
+
+@app.route("/pricing")
+@login_required
+def pricing():
+    return render_template("pricing.html", username=session.get("username"))
 
 
 @app.route("/start")
 def start():
     if "user_id" in session:
-        return redirect(url_for("index"))
+        return redirect(url_for("home"))
     return render_template("start.html")
 
 
@@ -265,7 +277,7 @@ def signup():
 
     session["user_id"] = user_id
     session["username"] = username
-    return redirect(url_for("index"))
+    return redirect(url_for("home"))
 
 
 @app.route("/login", methods=["POST"])
@@ -281,7 +293,7 @@ def login():
 
     session["user_id"] = user["id"]
     session["username"] = user["username"]
-    return redirect(url_for("index"))
+    return redirect(url_for("home"))
 
 
 @app.route("/logout", methods=["POST"])
