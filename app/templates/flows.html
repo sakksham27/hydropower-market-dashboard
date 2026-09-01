@@ -194,28 +194,80 @@
             <p class="card-subtitle">
                 P = &eta; &middot; &rho; &middot; g &middot; Q &middot; H, using the streamflow loaded above.
                 Assumes a fixed simulated head (H) of 30 m, water density 1000 kg/m&sup3;, and gravity 9.81 m/s&sup2;.
+                Reported in MW. Expand a chart to adjust its time range and turbine efficiency (&eta;).
             </p>
 
-            <div class="power-controls">
-                <label class="power-efficiency-label" for="power-efficiency-slider">
-                    Turbine efficiency (&eta;): <span id="power-efficiency-value">0.90</span>
-                </label>
-                <input type="range" id="power-efficiency-slider" min="0.85" max="0.93" step="0.01" value="0.90" />
-            </div>
-
             <div class="power-chart-block">
-                <p class="power-chart-title">Streamflow power generation</p>
                 <p class="power-chart-empty" id="power-actual-empty">Load a USGS gauge above to see this chart.</p>
-                <div class="chart-canvas-wrap power-canvas-wrap" id="power-actual-wrap" hidden>
-                    <canvas id="power-actual-canvas"></canvas>
+                <div class="chart-container power-chart-container" id="power-actual-container" hidden>
+                    <div class="chart-header">
+                        <p class="power-chart-title">Streamflow power generation</p>
+                        <div class="chart-header-actions">
+                            <button type="button" class="expand-btn" title="Expand chart" aria-label="Expand chart">&#9974; Expand</button>
+                        </div>
+                    </div>
+
+                    <div class="chart-canvas-wrap power-canvas-wrap">
+                        <canvas id="power-actual-canvas"></canvas>
+                    </div>
+
+                    <div class="power-expand-controls">
+                        <div class="range-slider-container">
+                            <div class="range-slider">
+                                <input type="range" class="range-start" id="power-actual-range-start" min="0" max="24" step="0.5" value="0" />
+                                <input type="range" class="range-end" id="power-actual-range-end" min="0" max="24" step="0.5" value="24" />
+                            </div>
+                            <div class="range-labels">
+                                <span class="range-start-label" id="power-actual-range-start-label"></span>
+                                <span>&ndash;</span>
+                                <span class="range-end-label" id="power-actual-range-end-label"></span>
+                            </div>
+                        </div>
+
+                        <div class="power-modal-controls">
+                            <label class="power-efficiency-label" for="power-actual-eff-slider">
+                                Turbine efficiency (&eta;): <span id="power-actual-eff-value">0.90</span>
+                            </label>
+                            <input type="range" class="power-eff-slider" id="power-actual-eff-slider" min="0.85" max="0.93" step="0.01" value="0.90" />
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="power-chart-block">
-                <p class="power-chart-title">Forecasted streamflow power generation</p>
                 <p class="power-chart-empty" id="power-forecast-empty">Load a NOAA reach above to see this chart.</p>
-                <div class="chart-canvas-wrap power-canvas-wrap" id="power-forecast-wrap" hidden>
-                    <canvas id="power-forecast-canvas"></canvas>
+                <div class="chart-container power-chart-container" id="power-forecast-container" hidden>
+                    <div class="chart-header">
+                        <p class="power-chart-title">Forecasted streamflow power generation</p>
+                        <div class="chart-header-actions">
+                            <button type="button" class="expand-btn" title="Expand chart" aria-label="Expand chart">&#9974; Expand</button>
+                        </div>
+                    </div>
+
+                    <div class="chart-canvas-wrap power-canvas-wrap">
+                        <canvas id="power-forecast-canvas"></canvas>
+                    </div>
+
+                    <div class="power-expand-controls">
+                        <div class="range-slider-container">
+                            <div class="range-slider">
+                                <input type="range" class="range-start" id="power-forecast-range-start" min="0" max="24" step="0.5" value="0" />
+                                <input type="range" class="range-end" id="power-forecast-range-end" min="0" max="24" step="0.5" value="24" />
+                            </div>
+                            <div class="range-labels">
+                                <span class="range-start-label" id="power-forecast-range-start-label"></span>
+                                <span>&ndash;</span>
+                                <span class="range-end-label" id="power-forecast-range-end-label"></span>
+                            </div>
+                        </div>
+
+                        <div class="power-modal-controls">
+                            <label class="power-efficiency-label" for="power-forecast-eff-slider">
+                                Turbine efficiency (&eta;): <span id="power-forecast-eff-value">0.90</span>
+                            </label>
+                            <input type="range" class="power-eff-slider" id="power-forecast-eff-slider" min="0.85" max="0.93" step="0.01" value="0.90" />
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
