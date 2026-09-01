@@ -383,9 +383,14 @@ function createWidget(root, config) {
     let extraSeries = []; // [{ id, readings }] — additional lines added via "+ Add site"
     let currentThreshold = null;
     const dataChangeListeners = []; // notified whenever loadChart() resolves, success or empty
+    const loadStartListeners = []; // notified when a fetch begins, ahead of dataChangeListeners
 
     function notifyDataChange() {
         dataChangeListeners.forEach((fn) => fn());
+    }
+
+    function notifyLoadStart() {
+        loadStartListeners.forEach((fn) => fn());
     }
 
     function getPinned() {
@@ -770,6 +775,7 @@ function createWidget(root, config) {
         statusEl.className = "status";
         statusEl.textContent = `Fetching data for ${config.entityLabel.toLowerCase()} ${id}...`;
         loadingState.startLoading();
+        notifyLoadStart();
 
         try {
             const response = await fetch(config.fetchUrl, {
@@ -870,6 +876,9 @@ function createWidget(root, config) {
         onDataChange(fn) {
             dataChangeListeners.push(fn);
         },
+        onLoadStart(fn) {
+            loadStartListeners.push(fn);
+        },
     };
 }
 
@@ -967,9 +976,14 @@ function createReachWidget(root, config) {
     let extraSeries = []; // [{ id, readings }] — additional reaches added via "+ Compare"
     let currentThreshold = null;
     const dataChangeListeners = []; // notified whenever loadChart() resolves, success or empty
+    const loadStartListeners = []; // notified when a fetch begins, ahead of dataChangeListeners
 
     function notifyDataChange() {
         dataChangeListeners.forEach((fn) => fn());
+    }
+
+    function notifyLoadStart() {
+        loadStartListeners.forEach((fn) => fn());
     }
 
     function getPinned() {
@@ -1356,6 +1370,7 @@ function createReachWidget(root, config) {
         statusEl.className = "status";
         statusEl.textContent = `Fetching data for ${config.entityLabel.toLowerCase()} ${id}...`;
         loadingState.startLoading();
+        notifyLoadStart();
 
         try {
             const response = await fetch(config.fetchUrl, {
@@ -1459,6 +1474,9 @@ function createReachWidget(root, config) {
         onDataChange(fn) {
             dataChangeListeners.push(fn);
         },
+        onLoadStart(fn) {
+            loadStartListeners.push(fn);
+        },
     };
 }
 
@@ -1528,7 +1546,9 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
     function createPowerChartController(prefix) {
         const emptyEl = document.getElementById(`power-${prefix}-empty`);
         const containerEl = document.getElementById(`power-${prefix}-container`);
+        const skeletonEl = document.getElementById(`power-${prefix}-skeleton`);
         const canvas = document.getElementById(`power-${prefix}-canvas`);
+        const canvasWrapEl = canvas.parentElement;
         const rangeStart = document.getElementById(`power-${prefix}-range-start`);
         const rangeEnd = document.getElementById(`power-${prefix}-range-end`);
         const rangeStartLabel = document.getElementById(`power-${prefix}-range-start-label`);
@@ -1644,16 +1664,30 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
         effSlider.addEventListener("input", render);
 
         return {
+            // Called as soon as the underlying gauge/reach fetch starts
+            // (submit or refresh), so this chart shows the same shimmering
+            // placeholder as the streamflow panels while it waits, instead
+            // of just quietly sitting there until the new data lands.
+            showLoading() {
+                emptyEl.hidden = true;
+                containerEl.hidden = false;
+                skeletonEl.hidden = false;
+                canvasWrapEl.hidden = true;
+            },
             update(label, color, readings) {
                 if (!readings || !readings.length) {
                     emptyEl.hidden = false;
                     containerEl.hidden = true;
+                    skeletonEl.hidden = true;
+                    canvasWrapEl.hidden = false;
                     currentSeries = null;
                     return;
                 }
 
                 emptyEl.hidden = true;
                 containerEl.hidden = false;
+                skeletonEl.hidden = true;
+                canvasWrapEl.hidden = false;
 
                 const times = readings.map((r) => new Date(r.datetime).getTime());
                 seriesStartMs = Math.min(...times);
@@ -1705,6 +1739,8 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
     usgsWidget.onDataChange(updatePowerCharts);
     reachWidget.onDataChange(updatePowerCharts);
     headChangeListeners.push(updatePowerCharts);
+    usgsWidget.onLoadStart(() => actualController.showLoading());
+    reachWidget.onLoadStart(() => forecastController.showLoading());
 
     updatePowerCharts();
 }

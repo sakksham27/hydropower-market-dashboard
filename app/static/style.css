@@ -124,6 +124,14 @@ body {
     height: 200px;
 }
 
+.power-chart-skeleton .skeleton-canvas {
+    height: 200px;
+}
+
+.chart-container.is-expanded .power-chart-skeleton .skeleton-canvas {
+    height: min(58vh, 520px);
+}
+
 .placeholder-card {
     display: flex;
     align-items: center;
