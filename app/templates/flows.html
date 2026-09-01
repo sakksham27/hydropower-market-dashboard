@@ -189,14 +189,18 @@
         <section class="card" id="power-widget">
             <div class="card-title-row">
                 <h2 class="card-title">Power Generation</h2>
+                <span class="info-tooltip">
+                    <button type="button" class="info-icon" aria-describedby="power-info-tooltip">?</button>
+                    <span class="info-tooltip-content info-tooltip-content-wide" id="power-info-tooltip" role="tooltip">
+                        P = &eta; &middot; &rho; &middot; g &middot; Q &middot; H, using the streamflow loaded above.
+                        Head (H) is <span id="power-head-note">30 m, default</span>, using the Head Value (H) set on
+                        the loaded saved site, or the default if none is set. Water density 1000 kg/m&sup3;, gravity
+                        9.81 m/s&sup2;, reported in MW. Expand a chart to adjust its time range and turbine
+                        efficiency (&eta;).
+                    </span>
+                </span>
                 <span class="panel-badge panel-badge-forecast" title="Computed from the flow panels above, not a live data source">SIMULATED</span>
             </div>
-            <p class="card-subtitle">
-                P = &eta; &middot; &rho; &middot; g &middot; Q &middot; H, using the streamflow loaded above.
-                Head (H) is <span id="power-head-note">30 m, default</span>, using the Head Value (H) set on the
-                loaded saved site, or the default if none is set. Water density 1000 kg/m&sup3;, gravity 9.81 m/s&sup2;,
-                reported in MW. Expand a chart to adjust its time range and turbine efficiency (&eta;).
-            </p>
 
             <div class="power-chart-block">
                 <p class="power-chart-empty" id="power-actual-empty">Load a USGS gauge above to see this chart.</p>

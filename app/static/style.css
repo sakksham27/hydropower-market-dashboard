@@ -1176,6 +1176,10 @@ body {
     text-align: left;
 }
 
+.info-tooltip-content-wide {
+    max-width: 280px;
+}
+
 .info-tooltip-content a {
     display: inline-block;
     margin-top: 0.3rem;
