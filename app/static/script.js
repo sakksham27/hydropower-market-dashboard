@@ -1481,8 +1481,13 @@ const reachWidget = reachWidgetEl && createReachWidget(reachWidgetEl, {
 /**
  * Power generation (synthetic): P = η · ρ · g · Q · H, applied to whatever
  * flow data is already loaded in the USGS and NOAA reach panels above (both
- * report flow in cfs, converted to m³/s here). H is a fixed, simulated dam
- * height — there's no real data source for it. Output is reported in MW.
+ * report flow in cfs, converted to m³/s here). Output is reported in MW.
+ *
+ * H (head) comes from the saved site currently loaded from the dropdown, if
+ * that site has one set (see the "Manage Sites" form) — there's no real data
+ * source for it otherwise, so a site with no head value, or no site loaded
+ * at all, falls back to DEFAULT_HEAD_M. setActiveSiteHead() below is the
+ * bridge from the saved-sites section (further down this file) into here.
  *
  * Each of the two charts (actual / forecast) gets its own expand button that
  * borrows the shared chartModal, same as the streamflow panels above. Unlike
@@ -1490,19 +1495,33 @@ const reachWidget = reachWidgetEl && createReachWidget(reachWidgetEl, {
  * only need to be usable, not always visible — so both live inside
  * .power-expand-controls, which CSS shows only once the chart is expanded.
  */
+const DEFAULT_HEAD_M = 30;
+let activeSiteHeadM = null;
+const headChangeListeners = [];
+
+function setActiveSiteHead(headM) {
+    activeSiteHeadM = headM;
+    const headNoteEl = document.getElementById("power-head-note");
+    if (headNoteEl) {
+        headNoteEl.textContent =
+            headM != null ? `${headM} m, from the loaded site` : `${DEFAULT_HEAD_M} m, default`;
+    }
+    headChangeListeners.forEach((fn) => fn());
+}
+
 const powerWidgetEl = document.getElementById("power-widget");
 
 if (powerWidgetEl && usgsWidget && reachWidget) {
     const CFS_TO_M3S = 0.0283168466;
     const WATER_DENSITY_KG_M3 = 1000;
     const GRAVITY_M_S2 = 9.81;
-    const SIMULATED_HEAD_M = 30;
     const WATTS_PER_MW = 1_000_000;
 
     function computePowerMW(flowCfs, efficiency) {
         if (flowCfs === null || flowCfs === undefined) return null;
+        const headM = activeSiteHeadM != null ? activeSiteHeadM : DEFAULT_HEAD_M;
         const flowM3s = flowCfs * CFS_TO_M3S;
-        const watts = efficiency * WATER_DENSITY_KG_M3 * GRAVITY_M_S2 * flowM3s * SIMULATED_HEAD_M;
+        const watts = efficiency * WATER_DENSITY_KG_M3 * GRAVITY_M_S2 * flowM3s * headM;
         return watts / WATTS_PER_MW;
     }
 
@@ -1651,6 +1670,7 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
 
     usgsWidget.onDataChange(updatePowerCharts);
     reachWidget.onDataChange(updatePowerCharts);
+    headChangeListeners.push(updatePowerCharts);
 
     updatePowerCharts();
 }
@@ -1875,7 +1895,9 @@ function idsSummary(site) {
     if (site.gauge_id) parts.push(`Gauge ${site.gauge_id}`);
     if (site.ptid) parts.push(`PTID ${site.ptid}`);
     if (site.reach_id) parts.push(`Reach ${site.reach_id}`);
-    return parts.join(" · ") || "No IDs set";
+    const idsText = parts.join(" · ") || "No IDs set";
+    const headText = site.head_m != null ? `H ${site.head_m} m` : "H default (30 m)";
+    return `${idsText} · ${headText}`;
 }
 
 function renderManageSitesList() {
@@ -1939,6 +1961,7 @@ function openManageSiteForm(site) {
     manageSiteForm.elements.gauge_id.value = site ? site.gauge_id || "" : "";
     manageSiteForm.elements.ptid.value = site ? site.ptid || "" : "";
     manageSiteForm.elements.reach_id.value = site ? site.reach_id || "" : "";
+    manageSiteForm.elements.head_m.value = site && site.head_m != null ? site.head_m : "";
     document.getElementById("manage-site-form-submit").textContent = site ? "Save changes" : "Save";
 }
 
@@ -1968,6 +1991,7 @@ savedSitesSelect?.addEventListener("change", () => {
     applySavedId("usgs-input", site.gauge_id);
     applySavedId("nyiso-input", site.ptid);
     applySavedId("reach-input", site.reach_id);
+    setActiveSiteHead(site.head_m != null ? Number(site.head_m) : null);
 
     const parts = [];
     if (site.gauge_id) parts.push(`gauge ${site.gauge_id}`);
@@ -2008,6 +2032,7 @@ manageSiteForm.addEventListener("submit", async (event) => {
         gauge_id: (formData.get("gauge_id") || "").trim(),
         ptid: (formData.get("ptid") || "").trim(),
         reach_id: (formData.get("reach_id") || "").trim(),
+        head_m: (formData.get("head_m") || "").trim(),
     };
 
     manageSitesStatus.className = "save-site-status";

@@ -309,6 +309,24 @@ def api_list_sites():
     return jsonify({"sites": sites})
 
 
+def _parse_head_m(body):
+    """Returns (head_m, error_response_or_None). head_m is None when the
+    field was left blank, meaning callers should fall back to the standard
+    simulated head used when a site has no head value of its own."""
+    raw = body.get("head_m")
+    if raw in (None, ""):
+        return None, None
+
+    try:
+        head_m = float(raw)
+    except (TypeError, ValueError):
+        return None, (jsonify({"error": "Head value (H) must be a number."}), 400)
+    if head_m <= 0:
+        return None, (jsonify({"error": "Head value (H) must be greater than 0."}), 400)
+
+    return head_m, None
+
+
 @app.route("/api/sites", methods=["POST"])
 @login_required
 def api_create_site():
@@ -323,13 +341,24 @@ def api_create_site():
     if not (gauge_id or ptid or reach_id):
         return jsonify({"error": "Enter at least one ID (gauge, PTID, or reach)."}), 400
 
+    head_m, error = _parse_head_m(body)
+    if error:
+        return error
+
     try:
-        site_id = db.create_saved_site(session["user_id"], name, gauge_id, ptid, reach_id)
+        site_id = db.create_saved_site(session["user_id"], name, gauge_id, ptid, reach_id, head_m)
     except psycopg2.errors.UniqueViolation:
         return jsonify({"error": f'You already have a saved site named "{name}".'}), 400
 
     return jsonify(
-        {"id": site_id, "name": name, "gauge_id": gauge_id, "ptid": ptid, "reach_id": reach_id}
+        {
+            "id": site_id,
+            "name": name,
+            "gauge_id": gauge_id,
+            "ptid": ptid,
+            "reach_id": reach_id,
+            "head_m": head_m,
+        }
     )
 
 
@@ -347,8 +376,12 @@ def api_update_site(site_id):
     if not (gauge_id or ptid or reach_id):
         return jsonify({"error": "Enter at least one ID (gauge, PTID, or reach)."}), 400
 
+    head_m, error = _parse_head_m(body)
+    if error:
+        return error
+
     try:
-        updated = db.update_saved_site(session["user_id"], site_id, name, gauge_id, ptid, reach_id)
+        updated = db.update_saved_site(session["user_id"], site_id, name, gauge_id, ptid, reach_id, head_m)
     except psycopg2.errors.UniqueViolation:
         return jsonify({"error": f'You already have a saved site named "{name}".'}), 400
 
@@ -356,7 +389,14 @@ def api_update_site(site_id):
         return jsonify({"error": "Site not found."}), 404
 
     return jsonify(
-        {"id": site_id, "name": name, "gauge_id": gauge_id, "ptid": ptid, "reach_id": reach_id}
+        {
+            "id": site_id,
+            "name": name,
+            "gauge_id": gauge_id,
+            "ptid": ptid,
+            "reach_id": reach_id,
+            "head_m": head_m,
+        }
     )
 
 

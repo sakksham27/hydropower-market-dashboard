@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS {SAVED_SITES_TABLE_NAME} (
     gauge_id TEXT,
     ptid TEXT,
     reach_id TEXT,
+    head_m DOUBLE PRECISION,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (user_id, name)
 );
@@ -398,38 +399,41 @@ def ensure_saved_sites_table():
     try:
         with conn, conn.cursor() as cur:
             cur.execute(CREATE_SAVED_SITES_TABLE_SQL)
+            cur.execute(
+                f"ALTER TABLE {SAVED_SITES_TABLE_NAME} ADD COLUMN IF NOT EXISTS head_m DOUBLE PRECISION"
+            )
     finally:
         conn.close()
 
 
-def create_saved_site(user_id, name, gauge_id, ptid, reach_id):
+def create_saved_site(user_id, name, gauge_id, ptid, reach_id, head_m):
     conn = get_connection()
     try:
         with conn, conn.cursor() as cur:
             cur.execute(
                 f"""
-                INSERT INTO {SAVED_SITES_TABLE_NAME} (user_id, name, gauge_id, ptid, reach_id)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO {SAVED_SITES_TABLE_NAME} (user_id, name, gauge_id, ptid, reach_id, head_m)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
-                (user_id, name, gauge_id, ptid, reach_id),
+                (user_id, name, gauge_id, ptid, reach_id, head_m),
             )
             return cur.fetchone()[0]
     finally:
         conn.close()
 
 
-def update_saved_site(user_id, site_id, name, gauge_id, ptid, reach_id):
+def update_saved_site(user_id, site_id, name, gauge_id, ptid, reach_id, head_m):
     conn = get_connection()
     try:
         with conn, conn.cursor() as cur:
             cur.execute(
                 f"""
                 UPDATE {SAVED_SITES_TABLE_NAME}
-                SET name = %s, gauge_id = %s, ptid = %s, reach_id = %s
+                SET name = %s, gauge_id = %s, ptid = %s, reach_id = %s, head_m = %s
                 WHERE user_id = %s AND id = %s
                 """,
-                (name, gauge_id, ptid, reach_id, user_id, site_id),
+                (name, gauge_id, ptid, reach_id, head_m, user_id, site_id),
             )
             return cur.rowcount
     finally:
@@ -442,7 +446,7 @@ def get_saved_sites(user_id):
         with conn, conn.cursor() as cur:
             cur.execute(
                 f"""
-                SELECT id, name, gauge_id, ptid, reach_id
+                SELECT id, name, gauge_id, ptid, reach_id, head_m
                 FROM {SAVED_SITES_TABLE_NAME}
                 WHERE user_id = %s
                 ORDER BY name ASC
