@@ -186,11 +186,37 @@
             </div>
         </section>
 
-        <section class="card placeholder-card">
-            <div>
-                <span class="placeholder-card-icon" aria-hidden="true">&#128196;</span>
-                <p class="placeholder-card-text">Coming soon</p>
-                <p class="placeholder-card-subtext">Reserved for a future flows panel.</p>
+        <section class="card" id="power-widget">
+            <div class="card-title-row">
+                <h2 class="card-title">Power Generation</h2>
+                <span class="panel-badge panel-badge-forecast" title="Computed from the flow panels above, not a live data source">SIMULATED</span>
+            </div>
+            <p class="card-subtitle">
+                P = &eta; &middot; &rho; &middot; g &middot; Q &middot; H, using the streamflow loaded above.
+                Assumes a fixed simulated head (H) of 30 m, water density 1000 kg/m&sup3;, and gravity 9.81 m/s&sup2;.
+            </p>
+
+            <div class="power-controls">
+                <label class="power-efficiency-label" for="power-efficiency-slider">
+                    Turbine efficiency (&eta;): <span id="power-efficiency-value">0.90</span>
+                </label>
+                <input type="range" id="power-efficiency-slider" min="0.85" max="0.93" step="0.01" value="0.90" />
+            </div>
+
+            <div class="power-chart-block">
+                <p class="power-chart-title">Streamflow power generation</p>
+                <p class="power-chart-empty" id="power-actual-empty">Load a USGS gauge above to see this chart.</p>
+                <div class="chart-canvas-wrap power-canvas-wrap" id="power-actual-wrap" hidden>
+                    <canvas id="power-actual-canvas"></canvas>
+                </div>
+            </div>
+
+            <div class="power-chart-block">
+                <p class="power-chart-title">Forecasted streamflow power generation</p>
+                <p class="power-chart-empty" id="power-forecast-empty">Load a NOAA reach above to see this chart.</p>
+                <div class="chart-canvas-wrap power-canvas-wrap" id="power-forecast-wrap" hidden>
+                    <canvas id="power-forecast-canvas"></canvas>
+                </div>
             </div>
         </section>
     </div>

@@ -1479,6 +1479,130 @@ const reachWidget = reachWidgetEl && createReachWidget(reachWidgetEl, {
 });
 
 /**
+ * Power generation (synthetic): P = η · ρ · g · Q · H, applied to whatever
+ * flow data is already loaded in the USGS and NOAA reach panels above (both
+ * report flow in cfs, converted to m³/s here). H is a fixed, simulated dam
+ * height — there's no real data source for it — while turbine efficiency
+ * (η) is exposed as a slider since it's the parameter worth exploring.
+ * Redraws live via onDataChange, same pattern as the other widgets.
+ */
+const powerWidgetEl = document.getElementById("power-widget");
+
+if (powerWidgetEl && usgsWidget && reachWidget) {
+    const CFS_TO_M3S = 0.0283168466;
+    const WATER_DENSITY_KG_M3 = 1000;
+    const GRAVITY_M_S2 = 9.81;
+    const SIMULATED_HEAD_M = 30;
+
+    const effSlider = document.getElementById("power-efficiency-slider");
+    const effValueLabel = document.getElementById("power-efficiency-value");
+    const actualWrap = document.getElementById("power-actual-wrap");
+    const actualEmpty = document.getElementById("power-actual-empty");
+    const actualCanvas = document.getElementById("power-actual-canvas");
+    const forecastWrap = document.getElementById("power-forecast-wrap");
+    const forecastEmpty = document.getElementById("power-forecast-empty");
+    const forecastCanvas = document.getElementById("power-forecast-canvas");
+
+    let actualPowerChart = null;
+    let forecastPowerChart = null;
+
+    function computePowerWatts(flowCfs, efficiency) {
+        if (flowCfs === null || flowCfs === undefined) return null;
+        const flowM3s = flowCfs * CFS_TO_M3S;
+        return efficiency * WATER_DENSITY_KG_M3 * GRAVITY_M_S2 * flowM3s * SIMULATED_HEAD_M;
+    }
+
+    function renderPowerChart(existingChart, canvas, series, label, color) {
+        const efficiency = parseFloat(effSlider.value);
+        const rows = series.readings.map((r) => ({
+            x: new Date(r.datetime),
+            y: computePowerWatts(r.value, efficiency),
+        }));
+
+        if (existingChart) existingChart.destroy();
+
+        return new Chart(canvas, {
+            type: "line",
+            data: {
+                datasets: [
+                    {
+                        label,
+                        data: rows,
+                        borderColor: color,
+                        backgroundColor: color,
+                        tension: 0.2,
+                        pointRadius: 2,
+                        fill: false,
+                        spanGaps: true,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "nearest", intersect: true },
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        type: "time",
+                        time: { tooltipFormat: "MMM d, HH:mm" },
+                        title: { display: true, text: "Time" },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: "Power (W)" },
+                    },
+                },
+            },
+        });
+    }
+
+    function updatePowerCharts() {
+        const actualSeries = usgsWidget.getPrimarySeries();
+        if (actualSeries && actualSeries.readings.length) {
+            actualEmpty.hidden = true;
+            actualWrap.hidden = false;
+            actualPowerChart = renderPowerChart(
+                actualPowerChart,
+                actualCanvas,
+                actualSeries,
+                `Gauge ${actualSeries.id} power`,
+                "#2f7a4f"
+            );
+        } else {
+            actualEmpty.hidden = false;
+            actualWrap.hidden = true;
+        }
+
+        const forecastSeries = reachWidget.getPrimarySeries();
+        if (forecastSeries && forecastSeries.readings.length) {
+            forecastEmpty.hidden = true;
+            forecastWrap.hidden = false;
+            forecastPowerChart = renderPowerChart(
+                forecastPowerChart,
+                forecastCanvas,
+                forecastSeries,
+                `Reach ${forecastSeries.id} forecasted power`,
+                "#e07a1f"
+            );
+        } else {
+            forecastEmpty.hidden = false;
+            forecastWrap.hidden = true;
+        }
+    }
+
+    effSlider.addEventListener("input", () => {
+        effValueLabel.textContent = parseFloat(effSlider.value).toFixed(2);
+        updatePowerCharts();
+    });
+
+    usgsWidget.onDataChange(updatePowerCharts);
+    reachWidget.onDataChange(updatePowerCharts);
+
+    updatePowerCharts();
+}
+
+/**
  * One shared 5-minute timer/button for the whole dashboard, instead of a
  * separate countdown per panel. Refreshing re-fetches whatever ID is
  * currently loaded in each of the three panels (a panel with nothing loaded

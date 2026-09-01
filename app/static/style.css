@@ -61,6 +61,52 @@ body {
     color: #fff;
 }
 
+.power-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0 0 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #eee;
+}
+
+.power-efficiency-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #1c3d2e;
+}
+
+#power-efficiency-slider {
+    width: 100%;
+    accent-color: #2f7a4f;
+}
+
+.power-chart-block {
+    margin-bottom: 1.25rem;
+}
+
+.power-chart-block:last-child {
+    margin-bottom: 0;
+}
+
+.power-chart-title {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1c3d2e;
+}
+
+.power-chart-empty {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #9aa39d;
+    font-style: italic;
+}
+
+.power-canvas-wrap {
+    height: 200px;
+}
+
 .placeholder-card {
     display: flex;
     align-items: center;
