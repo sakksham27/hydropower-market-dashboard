@@ -1539,6 +1539,15 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
         let chartInstance = null;
         let currentSeries = null;
         let seriesStartMs = null;
+        let seriesEndMs = null;
+        // True only once the user has actually dragged a handle. Every
+        // update() (i.e. every refresh, since that's the only thing that
+        // calls it) resets this to false, so a refresh always plots the
+        // complete freshly-loaded series rather than re-deriving the old
+        // boundary from the range sliders' current (possibly
+        // browser-rounded) values, which could clip off the newest reading
+        // and make the chart look like it never changed.
+        let userAdjustedRange = false;
 
         wireExpandButton(containerEl, containerEl, () => chartInstance);
 
@@ -1565,9 +1574,16 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
             const efficiency = parseFloat(effSlider.value);
             effValueLabel.textContent = efficiency.toFixed(2);
 
-            const { start, end } = getSliderHours();
-            const startBoundary = seriesStartMs + start * 3600000;
-            const endBoundary = seriesStartMs + end * 3600000;
+            let startBoundary;
+            let endBoundary;
+            if (userAdjustedRange) {
+                const { start, end } = getSliderHours();
+                startBoundary = seriesStartMs + start * 3600000;
+                endBoundary = seriesStartMs + end * 3600000;
+            } else {
+                startBoundary = seriesStartMs;
+                endBoundary = seriesEndMs;
+            }
             const rangeLabels = formatRange(startBoundary, endBoundary);
             rangeStartLabel.textContent = rangeLabels.start;
             rangeEndLabel.textContent = rangeLabels.end;
@@ -1617,8 +1633,14 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
             });
         }
 
-        rangeStart.addEventListener("input", render);
-        rangeEnd.addEventListener("input", render);
+        rangeStart.addEventListener("input", () => {
+            userAdjustedRange = true;
+            render();
+        });
+        rangeEnd.addEventListener("input", () => {
+            userAdjustedRange = true;
+            render();
+        });
         effSlider.addEventListener("input", render);
 
         return {
@@ -1635,13 +1657,14 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
 
                 const times = readings.map((r) => new Date(r.datetime).getTime());
                 seriesStartMs = Math.min(...times);
-                const seriesEndMs = Math.max(...times);
+                seriesEndMs = Math.max(...times);
                 const totalHours = Math.max(MIN_GAP_HOURS, (seriesEndMs - seriesStartMs) / 3600000);
 
                 rangeStart.max = totalHours;
                 rangeEnd.max = totalHours;
                 rangeStart.value = 0;
                 rangeEnd.value = totalHours;
+                userAdjustedRange = false;
 
                 currentSeries = { label, color, readings };
                 render();
@@ -1653,19 +1676,30 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
     const forecastController = createPowerChartController("forecast");
 
     function updatePowerCharts() {
-        const actualSeries = usgsWidget.getPrimarySeries();
-        actualController.update(
-            actualSeries ? `Gauge ${actualSeries.id} power` : null,
-            "#2f7a4f",
-            actualSeries ? actualSeries.readings : null
-        );
+        // Each controller update runs in its own try/catch: usgsWidget and
+        // reachWidget each fire this on their own onDataChange, so a bad
+        // reading in one series shouldn't leave the other chart stuck too.
+        try {
+            const actualSeries = usgsWidget.getPrimarySeries();
+            actualController.update(
+                actualSeries ? `Gauge ${actualSeries.id} power` : null,
+                "#2f7a4f",
+                actualSeries ? actualSeries.readings : null
+            );
+        } catch (err) {
+            console.error("Failed to update actual power chart:", err);
+        }
 
-        const forecastSeries = reachWidget.getPrimarySeries();
-        forecastController.update(
-            forecastSeries ? `Reach ${forecastSeries.id} forecasted power` : null,
-            "#e07a1f",
-            forecastSeries ? forecastSeries.readings : null
-        );
+        try {
+            const forecastSeries = reachWidget.getPrimarySeries();
+            forecastController.update(
+                forecastSeries ? `Reach ${forecastSeries.id} forecasted power` : null,
+                "#e07a1f",
+                forecastSeries ? forecastSeries.readings : null
+            );
+        } catch (err) {
+            console.error("Failed to update forecast power chart:", err);
+        }
     }
 
     usgsWidget.onDataChange(updatePowerCharts);
