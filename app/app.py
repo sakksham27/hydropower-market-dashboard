@@ -222,10 +222,12 @@ def clean_reach_data(payload: dict, reach_id: str) -> list[dict]:
     return rows
 
 
+# Home and Pricing are hidden for now — Flows is the only page in use, so
+# both routes just bounce there rather than being removed outright.
 @app.route("/")
 @login_required
 def home():
-    return render_template("home.html", username=session.get("username"))
+    return redirect(url_for("flows"))
 
 
 @app.route("/flows")
@@ -237,13 +239,13 @@ def flows():
 @app.route("/pricing")
 @login_required
 def pricing():
-    return render_template("pricing.html", username=session.get("username"))
+    return redirect(url_for("flows"))
 
 
 @app.route("/start")
 def start():
     if "user_id" in session:
-        return redirect(url_for("home"))
+        return redirect(url_for("flows"))
     return render_template("start.html")
 
 
@@ -277,7 +279,7 @@ def signup():
 
     session["user_id"] = user_id
     session["username"] = username
-    return redirect(url_for("home"))
+    return redirect(url_for("flows"))
 
 
 @app.route("/login", methods=["POST"])
@@ -293,7 +295,7 @@ def login():
 
     session["user_id"] = user["id"]
     session["username"] = user["username"]
-    return redirect(url_for("home"))
+    return redirect(url_for("flows"))
 
 
 @app.route("/logout", methods=["POST"])

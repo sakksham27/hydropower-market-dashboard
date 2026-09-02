@@ -35,8 +35,6 @@
         </div>
     </div>
 
-    <nav class="site-nav" aria-label="Main">
-        <a href="{{ url_for('home') }}" class="site-nav-link{{ ' active' if active_page == 'home' else '' }}">Home</a>
-        <a href="{{ url_for('flows') }}" class="site-nav-link{{ ' active' if active_page == 'flows' else '' }}">Flows</a>
-        <a href="{{ url_for('pricing') }}" class="site-nav-link{{ ' active' if active_page == 'pricing' else '' }}">Pricing</a>
-    </nav>
+    <!-- Home and Pricing are hidden for now (app.py redirects both to Flows),
+         so the nav is hidden too rather than showing links to pages that
+         just bounce back here. -->
