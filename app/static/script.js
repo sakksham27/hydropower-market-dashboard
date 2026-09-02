@@ -999,7 +999,6 @@ function createReachWidget(root, config) {
     const chartContainer = root.querySelector(".chart-container");
     const chartTitleId = root.querySelector(".chart-title-id");
     const chartTitleRange = root.querySelector(".chart-title-range");
-    const chartTitleLatest = root.querySelector(".chart-title-latest");
     const chartCanvas = root.querySelector(".readings-chart");
     const extraSeriesChips = root.querySelector(".extra-series-chips");
     const rangeStart = root.querySelector(".range-start");
@@ -1199,15 +1198,6 @@ function createReachWidget(root, config) {
             ? `Comparing ${[currentId, ...extraSeries.map((s) => s.id)].join(", ")}`
             : `Reach ${currentId}`;
         chartTitleRange.textContent = `${rangeLabels.start} – ${rangeLabels.end}`;
-        // "Latest reading" isn't meaningful for a forecast (valid_time runs
-        // into the future by design) — reference_time, when the National
-        // Water Model actually issued this forecast, is what tells you how
-        // current it is.
-        const referenceTimes = currentReadings
-            .filter((r) => r.reference_time)
-            .map((r) => new Date(r.reference_time).getTime());
-        const latestMs = referenceTimes.length ? Math.max(...referenceTimes) : null;
-        applyFreshnessLabel(chartTitleLatest, freshnessLabel("Forecast issued:", latestMs, REACH_STALE_MS));
 
         const datasets = config.series.map((s) => ({
             label: hasExtras ? currentId : s.label,

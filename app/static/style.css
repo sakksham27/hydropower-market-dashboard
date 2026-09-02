@@ -1301,6 +1301,14 @@ body {
     text-overflow: ellipsis;
 }
 
+/* Forecast panels show only this range (no "Forecast issued" caption), so
+   it carries the freshness signal on its own and is styled to stand out. */
+.chart-title-range-forecast {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #b3261e;
+}
+
 /* Louder than .chart-title-range on purpose — this answers "as of when is
    this data" at a glance, which the slider-window range label doesn't
    quite do. Green means on the source's normal cadence; .is-stale (amber)
