@@ -65,6 +65,7 @@
                     <div class="chart-title-block">
                         <p class="chart-title-id"></p>
                         <p class="chart-title-range"></p>
+                        <p class="chart-title-latest"></p>
                     </div>
                     <div class="chart-header-actions">
                         <button type="button" class="scale-toggle-btn" aria-pressed="false" title="Auto-scale zooms the axis to the visible data range. Full range starts from zero so fluctuations aren't exaggerated.">Auto-scale</button>
@@ -143,6 +144,7 @@
                     <div class="chart-title-block">
                         <p class="chart-title-id"></p>
                         <p class="chart-title-range"></p>
+                        <p class="chart-title-latest"></p>
                     </div>
                     <div class="chart-header-actions">
                         <button type="button" class="scale-toggle-btn" aria-pressed="false" title="Auto-scale zooms the axis to the visible data range. Full range starts from zero so fluctuations aren't exaggerated.">Auto-scale</button>
@@ -206,7 +208,10 @@
                 <p class="power-chart-empty" id="power-actual-empty">Load a USGS gauge above to see this chart.</p>
                 <div class="chart-container power-chart-container" id="power-actual-container" hidden>
                     <div class="chart-header">
-                        <p class="power-chart-title">Streamflow power generation</p>
+                        <div class="chart-title-block">
+                            <p class="power-chart-title">Streamflow power generation</p>
+                            <p class="power-chart-latest" id="power-actual-latest"></p>
+                        </div>
                         <div class="chart-header-actions">
                             <button type="button" class="expand-btn" title="Expand chart" aria-label="Expand chart">&#9974; Expand</button>
                         </div>
@@ -248,7 +253,10 @@
                 <p class="power-chart-empty" id="power-forecast-empty">Load a NOAA reach above to see this chart.</p>
                 <div class="chart-container power-chart-container" id="power-forecast-container" hidden>
                     <div class="chart-header">
-                        <p class="power-chart-title">Forecasted streamflow power generation</p>
+                        <div class="chart-title-block">
+                            <p class="power-chart-title">Forecasted streamflow power generation</p>
+                            <p class="power-chart-latest" id="power-forecast-latest"></p>
+                        </div>
                         <div class="chart-header-actions">
                             <button type="button" class="expand-btn" title="Expand chart" aria-label="Expand chart">&#9974; Expand</button>
                         </div>

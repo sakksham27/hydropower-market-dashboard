@@ -1301,6 +1301,28 @@ body {
     text-overflow: ellipsis;
 }
 
+/* Louder than .chart-title-range on purpose — this answers "as of when is
+   this data" at a glance, which the slider-window range label doesn't
+   quite do. Green means on the source's normal cadence; .is-stale (amber)
+   means the newest reading is older than expected. */
+.chart-title-latest,
+.power-chart-latest {
+    margin: 0.15rem 0 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #1f7a43;
+}
+
+.chart-title-latest:empty,
+.power-chart-latest:empty {
+    display: none;
+}
+
+.chart-title-latest.is-stale,
+.power-chart-latest.is-stale {
+    color: #b45309;
+}
+
 .chart-header-actions {
     display: flex;
     align-items: center;
