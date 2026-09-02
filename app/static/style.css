@@ -1204,17 +1204,12 @@ body {
     max-width: 280px;
 }
 
-/* Default popover opens upward, centered on the icon. The Power Generation
-   card's info icon sits at the end of a long title row near the card's
-   right edge, where that centered-above placement used to read as "top
-   right" of the icon — this variant opens downward instead, right-aligned
-   to the icon so it reads as bottom-left. */
+/* Default popover opens upward, centered on the icon. This variant opens
+   downward instead, staying centered — used by the Power Generation card's
+   info icon so the popover sits directly under it. */
 .info-tooltip-content-below {
     bottom: auto;
     top: calc(100% + 0.4rem);
-    left: auto;
-    right: 0;
-    transform: none;
 }
 
 .info-tooltip-content a {
