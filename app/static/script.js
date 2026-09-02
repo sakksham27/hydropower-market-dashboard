@@ -273,35 +273,6 @@ function formatRange(startMs, endMs) {
     };
 }
 
-// How stale the power forecast panel's newest timestamp can get before it's
-// flagged (see the FORECAST badge tooltip): NWM forecast issuance ~hourly,
-// with a 2x buffer so normal jitter in the source's own publishing doesn't
-// false-flag.
-const REACH_STALE_MS = 2 * 60 * 60 * 1000;
-
-// Builds the "Forecast issued: ..." caption shown under the power forecast
-// chart's title, so a glance answers "as of when is this data" without
-// doing date math against the axis. Returns null when there's nothing
-// loaded yet (caller should just clear/hide the caption).
-function freshnessLabel(prefix, latestMs, staleThresholdMs) {
-    if (latestMs == null) return null;
-    return {
-        text: `${prefix} ${formatDateTime(latestMs)}`,
-        isStale: Date.now() - latestMs > staleThresholdMs,
-    };
-}
-
-function applyFreshnessLabel(el, label) {
-    if (!el) return;
-    if (!label) {
-        el.textContent = "";
-        el.classList.remove("is-stale");
-        return;
-    }
-    el.textContent = label.text;
-    el.classList.toggle("is-stale", label.isStale);
-}
-
 /**
  * A single shared modal that any widget's "Expand" button can borrow. Rather
  * than the native Fullscreen API (which looked jarring and left the chart
@@ -1586,11 +1557,10 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
     const sharedEffSlider = document.getElementById("power-eff-slider");
     const sharedEffValueLabel = document.getElementById("power-eff-value");
 
-    function createPowerChartController(prefix, freshnessPrefix, staleThresholdMs) {
+    function createPowerChartController(prefix) {
         const emptyEl = document.getElementById(`power-${prefix}-empty`);
         const containerEl = document.getElementById(`power-${prefix}-container`);
         const skeletonEl = document.getElementById(`power-${prefix}-skeleton`);
-        const latestEl = document.getElementById(`power-${prefix}-latest`);
         const canvas = document.getElementById(`power-${prefix}-canvas`);
         const canvasWrapEl = canvas.parentElement;
         const rangeStart = document.getElementById(`power-${prefix}-range-start`);
@@ -1718,12 +1688,7 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
                 skeletonEl.hidden = false;
                 canvasWrapEl.hidden = true;
             },
-            update(label, color, readings, latestMs) {
-                applyFreshnessLabel(
-                    latestEl,
-                    freshnessPrefix ? freshnessLabel(freshnessPrefix, latestMs, staleThresholdMs) : null
-                );
-
+            update(label, color, readings) {
                 if (!readings || !readings.length) {
                     emptyEl.hidden = false;
                     containerEl.hidden = true;
@@ -1755,8 +1720,8 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
         };
     }
 
-    const actualController = createPowerChartController("actual", null, null);
-    const forecastController = createPowerChartController("forecast", "Forecast issued:", REACH_STALE_MS);
+    const actualController = createPowerChartController("actual");
+    const forecastController = createPowerChartController("forecast");
 
     function updatePowerCharts() {
         // Each controller update runs in its own try/catch: usgsWidget and
@@ -1767,8 +1732,7 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
             actualController.update(
                 actualSeries ? `Gauge ${actualSeries.id} power` : null,
                 "#2f7a4f",
-                actualSeries ? actualSeries.readings : null,
-                actualSeries ? actualSeries.latestMs : null
+                actualSeries ? actualSeries.readings : null
             );
         } catch (err) {
             console.error("Failed to update actual power chart:", err);
@@ -1779,8 +1743,7 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
             forecastController.update(
                 forecastSeries ? `Reach ${forecastSeries.id} forecasted power` : null,
                 "#e07a1f",
-                forecastSeries ? forecastSeries.readings : null,
-                forecastSeries ? forecastSeries.latestMs : null
+                forecastSeries ? forecastSeries.readings : null
             );
         } catch (err) {
             console.error("Failed to update forecast power chart:", err);
