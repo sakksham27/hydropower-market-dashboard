@@ -273,19 +273,16 @@ function formatRange(startMs, endMs) {
     };
 }
 
-// How stale a panel's newest timestamp can get before it's flagged, per the
-// source's own typical cadence (see the LIVE/FORECAST badge tooltips):
-// USGS gauges ~every 15 min, NYISO LBMP ~every 5 min, NWM forecast issuance
-// ~hourly. All give a 2x buffer so normal jitter in the source's own
-// publishing doesn't false-flag.
-const USGS_STALE_MS = 30 * 60 * 1000;
-const NYISO_STALE_MS = 10 * 60 * 1000;
+// How stale the power forecast panel's newest timestamp can get before it's
+// flagged (see the FORECAST badge tooltip): NWM forecast issuance ~hourly,
+// with a 2x buffer so normal jitter in the source's own publishing doesn't
+// false-flag.
 const REACH_STALE_MS = 2 * 60 * 60 * 1000;
 
-// Builds the "Latest reading: ..." / "Forecast issued: ..." caption shown
-// under a chart's title, so a glance answers "as of when is this data"
-// without doing date math against the axis. Returns null when there's
-// nothing loaded yet (caller should just clear/hide the caption).
+// Builds the "Forecast issued: ..." caption shown under the power forecast
+// chart's title, so a glance answers "as of when is this data" without
+// doing date math against the axis. Returns null when there's nothing
+// loaded yet (caller should just clear/hide the caption).
 function freshnessLabel(prefix, latestMs, staleThresholdMs) {
     if (latestMs == null) return null;
     return {
@@ -397,7 +394,6 @@ function createWidget(root, config) {
     const chartContainer = root.querySelector(".chart-container");
     const chartTitleId = root.querySelector(".chart-title-id");
     const chartTitleRange = root.querySelector(".chart-title-range");
-    const chartTitleLatest = root.querySelector(".chart-title-latest");
     const chartCanvas = root.querySelector(".readings-chart");
     const extraSeriesChips = root.querySelector(".extra-series-chips");
     const rangeStart = root.querySelector(".range-start");
@@ -606,10 +602,6 @@ function createWidget(root, config) {
             ? `Comparing ${[currentId, ...extraSeries.map((s) => s.id)].join(", ")}`
             : `${config.entityLabel} ${currentId}`;
         chartTitleRange.textContent = `${rangeLabels.start} – ${rangeLabels.end}`;
-        const latestMs = currentReadings.length
-            ? Math.max(...currentReadings.map((r) => new Date(r.datetime).getTime()))
-            : null;
-        applyFreshnessLabel(chartTitleLatest, freshnessLabel("Latest reading:", latestMs, config.staleThresholdMs));
 
         if (chartInstance) {
             chartInstance.destroy();
@@ -933,7 +925,6 @@ const usgsWidget = usgsWidgetEl && createWidget(usgsWidgetEl, {
     readingsUrl: "/api/readings",
     valueField: "value",
     valueLabel: "Discharge (ft³/s)",
-    staleThresholdMs: USGS_STALE_MS,
     color: "#2f7a4f",
     fillColor: "rgba(47, 122, 79, 0.15)",
     filePrefix: "gauge_",
@@ -963,7 +954,6 @@ const nyisoWidget = nyisoWidgetEl && createWidget(nyisoWidgetEl, {
     readingsUrl: "/api/nyiso/readings",
     valueField: "lbmp",
     valueLabel: "LBMP ($/MWHr)",
-    staleThresholdMs: NYISO_STALE_MS,
     color: "#1f6f8b",
     fillColor: "rgba(31, 111, 139, 0.15)",
     filePrefix: "ptid_",
@@ -1555,9 +1545,10 @@ const reachWidget = reachWidgetEl && createReachWidget(reachWidgetEl, {
  *
  * Each of the two charts (actual / forecast) gets its own expand button that
  * borrows the shared chartModal, same as the streamflow panels above. Unlike
- * those panels, the time-range slider and the turbine efficiency (η) slider
- * only need to be usable, not always visible — so both live inside
- * .power-expand-controls, which CSS shows only once the chart is expanded.
+ * those panels, the time-range slider only needs to be usable, not always
+ * visible — so it lives inside .power-expand-controls, which CSS shows only
+ * once the chart is expanded. The turbine efficiency (η) slider stays
+ * visible in the compact card view too.
  */
 const DEFAULT_HEAD_M = 30;
 let activeSiteHeadM = null;
@@ -1722,7 +1713,10 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
                 canvasWrapEl.hidden = true;
             },
             update(label, color, readings, latestMs) {
-                applyFreshnessLabel(latestEl, freshnessLabel(freshnessPrefix, latestMs, staleThresholdMs));
+                applyFreshnessLabel(
+                    latestEl,
+                    freshnessPrefix ? freshnessLabel(freshnessPrefix, latestMs, staleThresholdMs) : null
+                );
 
                 if (!readings || !readings.length) {
                     emptyEl.hidden = false;
@@ -1755,7 +1749,7 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
         };
     }
 
-    const actualController = createPowerChartController("actual", "Latest reading:", USGS_STALE_MS);
+    const actualController = createPowerChartController("actual", null, null);
     const forecastController = createPowerChartController("forecast", "Forecast issued:", REACH_STALE_MS);
 
     function updatePowerCharts() {
@@ -1790,8 +1784,14 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
     usgsWidget.onDataChange(updatePowerCharts);
     reachWidget.onDataChange(updatePowerCharts);
     headChangeListeners.push(updatePowerCharts);
-    usgsWidget.onLoadStart(() => actualController.showLoading());
-    reachWidget.onLoadStart(() => forecastController.showLoading());
+    usgsWidget.onLoadStart(() => {
+        actualController.showLoading();
+        powerWidgetEl.classList.add("has-chart");
+    });
+    reachWidget.onLoadStart(() => {
+        forecastController.showLoading();
+        powerWidgetEl.classList.add("has-chart");
+    });
 
     updatePowerCharts();
 }

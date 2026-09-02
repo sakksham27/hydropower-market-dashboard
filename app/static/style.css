@@ -91,10 +91,11 @@ body {
     margin-top: 0;
 }
 
-/* The time-range and efficiency sliders are only useful once the chart has
-   room to show their effect, so they're kept out of the compact card view
-   and only shown once .expand-btn (borrowed from the streamflow panels)
-   moves this chart into the shared modal. */
+/* The time-range slider is only useful once the chart has room to show its
+   effect, so it's kept out of the compact card view and only shown once
+   .expand-btn (borrowed from the streamflow panels) moves this chart into
+   the shared modal. Turbine efficiency is cheap to reason about at any
+   size, so its slider (.power-modal-controls) stays visible everywhere. */
 .power-expand-controls {
     display: none;
 }
@@ -1301,9 +1302,11 @@ body {
     text-overflow: ellipsis;
 }
 
-/* Forecast panels show only this range (no "Forecast issued" caption), so
-   it carries the freshness signal on its own and is styled to stand out. */
-.chart-title-range-forecast {
+/* Forecast panels, and the USGS streamflow panel, show only this range (no
+   "Latest reading"/"Forecast issued" caption), so it carries the freshness
+   signal on its own and is styled to stand out. */
+.chart-title-range-forecast,
+.chart-title-range-streamflow {
     font-size: 0.85rem;
     font-weight: 700;
     color: #b3261e;
@@ -1312,8 +1315,8 @@ body {
 /* Louder than .chart-title-range on purpose — this answers "as of when is
    this data" at a glance, which the slider-window range label doesn't
    quite do. Green means on the source's normal cadence; .is-stale (amber)
-   means the newest reading is older than expected. */
-.chart-title-latest,
+   means the newest reading is older than expected. Used only by the power
+   forecast panel's "Forecast issued" caption now. */
 .power-chart-latest {
     margin: 0.15rem 0 0;
     font-size: 0.78rem;
@@ -1321,12 +1324,10 @@ body {
     color: #1f7a43;
 }
 
-.chart-title-latest:empty,
 .power-chart-latest:empty {
     display: none;
 }
 
-.chart-title-latest.is-stale,
 .power-chart-latest.is-stale {
     color: #b45309;
 }
