@@ -1580,6 +1580,12 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
         return watts / WATTS_PER_MW;
     }
 
+    // A single slider (#power-eff-slider) drives both charts — both
+    // controllers below attach their own "input" listener to it, so one
+    // drag re-renders both.
+    const sharedEffSlider = document.getElementById("power-eff-slider");
+    const sharedEffValueLabel = document.getElementById("power-eff-value");
+
     function createPowerChartController(prefix, freshnessPrefix, staleThresholdMs) {
         const emptyEl = document.getElementById(`power-${prefix}-empty`);
         const containerEl = document.getElementById(`power-${prefix}-container`);
@@ -1591,8 +1597,8 @@ if (powerWidgetEl && usgsWidget && reachWidget) {
         const rangeEnd = document.getElementById(`power-${prefix}-range-end`);
         const rangeStartLabel = document.getElementById(`power-${prefix}-range-start-label`);
         const rangeEndLabel = document.getElementById(`power-${prefix}-range-end-label`);
-        const effSlider = document.getElementById(`power-${prefix}-eff-slider`);
-        const effValueLabel = document.getElementById(`power-${prefix}-eff-value`);
+        const effSlider = sharedEffSlider;
+        const effValueLabel = sharedEffValueLabel;
 
         let chartInstance = null;
         let currentSeries = null;

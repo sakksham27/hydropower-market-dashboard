@@ -191,15 +191,23 @@
                 <h2 class="card-title">Power Generation</h2>
                 <span class="info-tooltip">
                     <button type="button" class="info-icon" aria-describedby="power-info-tooltip">?</button>
-                    <span class="info-tooltip-content info-tooltip-content-wide" id="power-info-tooltip" role="tooltip">
+                    <span class="info-tooltip-content info-tooltip-content-wide info-tooltip-content-below" id="power-info-tooltip" role="tooltip">
                         P = &eta; &middot; &rho; &middot; g &middot; Q &middot; H, using the streamflow loaded above.
                         Head (H) is <span id="power-head-note">30 m, default</span>, using the Head Value (H) set on
                         the loaded saved site, or the default if none is set. Water density 1000 kg/m&sup3;, gravity
-                        9.81 m/s&sup2;, reported in MW. Adjust turbine efficiency (&eta;) directly on each chart, or
-                        expand a chart to also adjust its time range.
+                        9.81 m/s&sup2;, reported in MW. Adjust turbine efficiency (&eta;) below, or expand a chart to
+                        also adjust its time range.
                     </span>
                 </span>
                 <span class="panel-badge panel-badge-forecast" title="Computed from the flow panels above, not a live data source">SIMULATED</span>
+            </div>
+            <p class="card-subtitle">Simulated power output, computed from the streamflow panels above.</p>
+
+            <div class="power-modal-controls">
+                <label class="power-efficiency-label" for="power-eff-slider">
+                    Turbine efficiency (&eta;): <span id="power-eff-value">0.90</span>
+                </label>
+                <input type="range" class="power-eff-slider" id="power-eff-slider" min="0.85" max="0.93" step="0.01" value="0.90" />
             </div>
 
             <div class="power-chart-block">
@@ -221,13 +229,6 @@
 
                     <div class="chart-canvas-wrap power-canvas-wrap">
                         <canvas id="power-actual-canvas"></canvas>
-                    </div>
-
-                    <div class="power-modal-controls">
-                        <label class="power-efficiency-label" for="power-actual-eff-slider">
-                            Turbine efficiency (&eta;): <span id="power-actual-eff-value">0.90</span>
-                        </label>
-                        <input type="range" class="power-eff-slider" id="power-actual-eff-slider" min="0.85" max="0.93" step="0.01" value="0.90" />
                     </div>
 
                     <div class="power-expand-controls">
@@ -266,13 +267,6 @@
 
                     <div class="chart-canvas-wrap power-canvas-wrap">
                         <canvas id="power-forecast-canvas"></canvas>
-                    </div>
-
-                    <div class="power-modal-controls">
-                        <label class="power-efficiency-label" for="power-forecast-eff-slider">
-                            Turbine efficiency (&eta;): <span id="power-forecast-eff-value">0.90</span>
-                        </label>
-                        <input type="range" class="power-eff-slider" id="power-forecast-eff-slider" min="0.85" max="0.93" step="0.01" value="0.90" />
                     </div>
 
                     <div class="power-expand-controls">

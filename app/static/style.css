@@ -93,17 +93,16 @@ body {
 
 /* Scoped to power charts only — the plain .chart-header rule (shared with
    the streamflow/pricing panels) keeps its own spacing untouched. Trimmed
-   here since the power widget now stacks two headers plus two always-on
-   efficiency sliders in the same fixed card height. */
+   here since the power widget now stacks two headers in the same fixed
+   card height. */
 .power-chart-container .chart-header {
     margin-bottom: 0.4rem;
 }
 
-/* The time-range slider is only useful once the chart has room to show its
+/* The time-range slider is only useful once its chart has room to show the
    effect, so it's kept out of the compact card view and only shown once
-   .expand-btn (borrowed from the streamflow panels) moves this chart into
-   the shared modal. Turbine efficiency is cheap to reason about at any
-   size, so its slider (.power-modal-controls) stays visible everywhere. */
+   .expand-btn (borrowed from the streamflow panels) moves that chart into
+   the shared modal. */
 .power-expand-controls {
     display: none;
 }
@@ -113,13 +112,16 @@ body {
     margin-top: 1rem;
 }
 
+/* One shared turbine-efficiency slider drives both power charts (they use
+   the same assumed efficiency), so it sits once above both .power-chart-block
+   rows rather than duplicated inside each — cheap to reason about at any
+   size, so unlike .power-expand-controls it stays visible in the compact
+   card view too. */
 .power-modal-controls {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    margin-top: 0.6rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid #eee;
+    margin-bottom: 0.75rem;
 }
 
 .power-chart-empty {
@@ -1200,6 +1202,18 @@ body {
 
 .info-tooltip-content-wide {
     max-width: 280px;
+}
+
+/* Default popover opens upward, centered on the icon. The Power Generation
+   card's info icon sits at the end of a long title row near the card's
+   right edge, where that centered-above placement reads as "top right" of
+   the icon — this variant opens downward instead, left-aligned to the
+   icon so it reads as bottom-right. */
+.info-tooltip-content-below {
+    bottom: auto;
+    top: calc(100% + 0.4rem);
+    left: 0;
+    transform: none;
 }
 
 .info-tooltip-content a {
