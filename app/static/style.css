@@ -73,7 +73,7 @@ body {
 }
 
 .power-chart-block {
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.75rem;
 }
 
 .power-chart-block:last-child {
@@ -89,6 +89,14 @@ body {
 
 .power-chart-container {
     margin-top: 0;
+}
+
+/* Scoped to power charts only — the plain .chart-header rule (shared with
+   the streamflow/pricing panels) keeps its own spacing untouched. Trimmed
+   here since the power widget now stacks two headers plus two always-on
+   efficiency sliders in the same fixed card height. */
+.power-chart-container .chart-header {
+    margin-bottom: 0.4rem;
 }
 
 /* The time-range slider is only useful once the chart has room to show its
@@ -109,8 +117,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    margin-top: 1rem;
-    padding-top: 0.75rem;
+    margin-top: 0.6rem;
+    padding-top: 0.5rem;
     border-top: 1px solid #eee;
 }
 
@@ -121,12 +129,17 @@ body {
     font-style: italic;
 }
 
+/* Two of these stack in the same fixed card height (unlike the single-canvas
+   streamflow/pricing panels), so each gets half of --combined-canvas-height
+   — a viewport-fit budget computed alongside --card-height in
+   fitDashboardToViewport() — rather than a flat height that could overflow
+   the card and force it to scroll. */
 .power-canvas-wrap {
-    height: 200px;
+    height: calc(var(--combined-canvas-height, 240px) / 2);
 }
 
 .power-chart-skeleton .skeleton-canvas {
-    height: 200px;
+    height: calc(var(--combined-canvas-height, 240px) / 2);
 }
 
 .chart-container.is-expanded .power-chart-skeleton .skeleton-canvas {

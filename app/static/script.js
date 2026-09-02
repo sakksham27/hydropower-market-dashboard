@@ -2469,7 +2469,10 @@ manageAlertForm.addEventListener("submit", async (event) => {
  */
 const DEFAULT_CARD_HEIGHT = 565;
 const DEFAULT_CANVAS_HEIGHT = 145;
-const DEFAULT_COMBINED_CANVAS_HEIGHT = 320;
+// Sized so the power widget's two stacked canvases, plus their headers and
+// always-visible efficiency sliders, fit inside DEFAULT_CARD_HEIGHT without
+// the card needing to scroll (see .power-canvas-wrap in style.css).
+const DEFAULT_COMBINED_CANVAS_HEIGHT = 240;
 const MIN_CARD_HEIGHT = 380;
 const MIN_CANVAS_HEIGHT = 90;
 const MIN_COMBINED_CANVAS_HEIGHT = 160;
